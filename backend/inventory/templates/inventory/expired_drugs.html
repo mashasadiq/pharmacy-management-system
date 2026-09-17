@@ -1,0 +1,9 @@
+<h1>Expired Drugs</h1>
+
+{% for drug in drugs %}
+    <p>
+        {{ drug.name }} — Expired: {{ drug.expiry_date }}
+    </p>
+{% empty %}
+    <p>No expired drugs.</p>
+{% endfor %}

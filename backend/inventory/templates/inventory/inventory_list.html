@@ -1,0 +1,23 @@
+<h1>Pharmacy Inventory</h1>
+
+<form method="get">
+    <input
+        type="text"
+        name="q"
+        placeholder="Search drugs..."
+        value="{{ query }}"
+    >
+
+```
+<button type="submit">Search</button>
+```
+
+</form>
+
+<hr>
+
+{% for drug in drugs %} <p>{{ drug.name }} — Stock: {{ drug.quantity_in_stock }}</p>
+{% empty %} <p>No drugs found.</p>
+{% endfor %}
+
+

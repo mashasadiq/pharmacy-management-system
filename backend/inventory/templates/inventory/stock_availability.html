@@ -1,0 +1,11 @@
+<h1>Stock Availability</h1>
+
+<p>Drug: {{ drug.name }}</p>
+
+<p>Current Stock: {{ current_stock }}</p>
+
+<p>Requested Quantity: {{ requested_quantity }}</p>
+
+{% if available %} <p>✅ Stock available</p>
+{% else %} <p>❌ Not enough stock</p>
+{% endif %}

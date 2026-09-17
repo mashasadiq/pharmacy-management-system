@@ -1,0 +1,11 @@
+<h1>Low Stock Drugs</h1>
+
+{% for drug in drugs %}
+    <p>
+        {{ drug.name }}
+        Stock: {{ drug.quantity_in_stock }}
+        Minimum: {{ drug.minimum_stock }}
+    </p>
+{% empty %}
+    <p>No low-stock drugs.</p>
+{% endfor %}
