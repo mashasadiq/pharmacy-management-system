@@ -10,6 +10,7 @@ from django.views.decorators.csrf import ensure_csrf_cookie
 from inventory.models import Drug
 from patients.models import Patient
 from .models import Sale, SaleItem
+from .services import complete_sale
 
 
 @login_required
@@ -32,9 +33,105 @@ def create_sale_page(request):
     )
 
 
+# @login_required
+# @transaction.atomic
+# def create_sale(request):
+#     if request.method != "POST":
+#         return JsonResponse(
+#             {"error": "Only POST requests are allowed."},
+#             status=405,
+#         )
+
+#     try:
+#         data = json.loads(request.body)
+
+#         patient = get_object_or_404(
+#             Patient,
+#             id=data["patient"]
+#         )
+
+#         payment_method = data["payment_method"]
+#         items = data["items"]
+
+#         if not items:
+#             return JsonResponse(
+#                 {"error": "A sale must contain at least one item."},
+#                 status=400,
+#             )
+
+#         sale = Sale.objects.create(
+#             patient=patient,
+#             pharmacist=request.user,
+#             payment_method=payment_method,
+#             status=Sale.Status.COMPLETED,
+#         )
+
+#         total_amount = Decimal("0.00")
+
+#         for item in items:
+
+#             drug = get_object_or_404(
+#                 Drug,
+#                 id=item["drug_id"]
+#             )
+
+#             quantity = int(item["quantity"])
+
+#             if quantity <= 0:
+#                 raise ValueError(
+#                     f"Invalid quantity for {drug.name}."
+#                 )
+
+#             if quantity > drug.quantity_in_stock:
+#                 raise ValueError(
+#                     f"Insufficient stock for {drug.name}."
+#                 )
+
+#             SaleItem.objects.create(
+#                 sale=sale,
+#                 drug=drug,
+#                 quantity=quantity,
+#                 unit_price=drug.selling_price,
+#             )
+
+#             drug.quantity_in_stock -= quantity
+#             drug.save()
+
+#             total_amount += quantity * drug.selling_price
+
+#         sale.total_amount = total_amount
+#         sale.save()
+
+#         return JsonResponse(
+#             {
+#                 "message": "Sale completed successfully.",
+#                 "sale_id": sale.id,
+#                 "total_amount": str(total_amount),
+#             }
+#         )
+
+#     except ValueError as e:
+#         transaction.set_rollback(True)
+
+#         return JsonResponse(
+#             {"error": str(e)},
+#             status=400,
+#         )
+
+#     except Exception as e:
+#         transaction.set_rollback(True)
+
+#         return JsonResponse(
+#             {"error": str(e)},
+#             status=500,
+#         )
+
 @login_required
 @transaction.atomic
 def create_sale(request):
+    """
+    Create a new pending sale without changing inventory stock.
+    """
     if request.method != "POST":
         return JsonResponse(
             {"error": "Only POST requests are allowed."},
@@ -62,13 +159,12 @@ def create_sale(request):
             patient=patient,
             pharmacist=request.user,
             payment_method=payment_method,
-            status=Sale.Status.COMPLETED,
+            status=Sale.Status.PENDING,
         )
 
         total_amount = Decimal("0.00")
 
         for item in items:
-
             drug = get_object_or_404(
                 Drug,
                 id=item["drug_id"]
@@ -93,9 +189,6 @@ def create_sale(request):
                 unit_price=drug.selling_price,
             )
 
-            drug.quantity_in_stock -= quantity
-            drug.save()
-
             total_amount += quantity * drug.selling_price
 
         sale.total_amount = total_amount
@@ -103,7 +196,7 @@ def create_sale(request):
 
         return JsonResponse(
             {
-                "message": "Sale completed successfully.",
+                "message": "Sale created successfully.",
                 "sale_id": sale.id,
                 "total_amount": str(total_amount),
             }
@@ -124,6 +217,7 @@ def create_sale(request):
             {"error": str(e)},
             status=500,
         )
+
 
 
 @login_required
@@ -162,3 +256,56 @@ def sale_detail(request, sale_id):
             "items": items,
         },
     )
+
+@login_required
+@transaction.atomic
+def complete_sale_view(request, sale_id):
+    """
+    Complete a pending sale and deduct its items from inventory.
+    """
+    if request.method != "POST":
+        return JsonResponse(
+            {"error": "Only POST requests are allowed."},
+            status=405,
+        )
+
+    sale = get_object_or_404(
+        Sale.objects.prefetch_related("items__drug"),
+        id=sale_id,
+    )
+
+    if sale.status != Sale.Status.PENDING:
+        return JsonResponse(
+            {"error": "Only pending sales can be completed."},
+            status=400,
+        )
+
+    items = [
+        (item.drug, item.quantity)
+        for item in sale.items.all()
+    ]
+
+    if not items:
+        return JsonResponse(
+            {"error": "A sale must contain at least one item."},
+            status=400,
+        )
+
+    try:
+        complete_sale(sale, items)
+
+        sale.status = Sale.Status.COMPLETED
+        sale.save(update_fields=["status"])
+
+        return JsonResponse(
+            {
+                "message": "Sale completed successfully.",
+                "sale_id": sale.id,
+            }
+        )
+
+    except Exception as e:
+        return JsonResponse(
+            {"error": str(e)},
+            status=400,
+        )

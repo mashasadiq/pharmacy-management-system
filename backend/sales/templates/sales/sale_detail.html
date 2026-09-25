@@ -27,6 +27,14 @@
         {{ sale.status }}
     </p>
 
+    {% if sale.status == "Pending" %}
+    <form method="post" action="{% url 'complete_sale' sale.id %}">
+        {% csrf_token %}
+        <button type="submit">Complete Sale</button>
+    </form>
+    {% endif %}
+
+
     <p>
         <strong>Date:</strong>
         {{ sale.sale_date }}

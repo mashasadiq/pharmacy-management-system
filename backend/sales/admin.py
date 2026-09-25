@@ -9,10 +9,21 @@ from inventory.models import Drug
 
 from audit_logs.models import AuditLog
 
+from .services import complete_sale, cancel_sale, update_completed_sale
+
 
 class SaleItemInline(admin.TabularInline):
     model = SaleItem
     extra = 1
+
+    def has_delete_permission(self, request, obj=None):
+        """
+        Allow SaleItems to be deleted only while the Sale is pending.
+        """
+        if obj is not None and obj.status != Sale.Status.PENDING:
+            return False
+
+        return super().has_delete_permission(request, obj)
 
 
 @admin.register(Sale)
@@ -45,10 +56,28 @@ class SaleAdmin(admin.ModelAdmin):
 
 
     def has_delete_permission(self, request, obj=None):
+        """
+        Allow deletion only for pending sales.
+        Completed and cancelled sales must remain as historical records.
+        """
         if request.user.role == "PHARMACIST":
             return False
 
+        if obj is not None and obj.status != Sale.Status.PENDING:
+            return False
+
         return super().has_delete_permission(request, obj)
+
+
+    def get_actions(self, request):
+        """
+        Remove bulk deletion so sales are deleted only through
+        the individual pending-sale delete action.
+        """
+        actions = super().get_actions(request)
+        actions.pop("delete_selected", None)
+        return actions
+
 
 
     def save_model(self, request, obj, form, change):
@@ -116,25 +145,24 @@ class SaleAdmin(admin.ModelAdmin):
             super().save_formset(request, form, formset, change)
             return
 
+
         # Restore stock when a completed sale is cancelled
         if (
             getattr(form.instance, "_old_status", None) == Sale.Status.COMPLETED
             and form.instance.status == Sale.Status.CANCELLED
         ):
-            with transaction.atomic():
-                for item in form.instance.items.all():
-                    item.drug.quantity_in_stock += item.quantity
-                    item.drug.save()
+            cancel_sale(form.instance)
 
             formset.save()
             return
+
 
         # Deduct stock when a pending sale becomes completed
         if (
             getattr(form.instance, "_old_status", None) == Sale.Status.PENDING
             and form.instance.status == Sale.Status.COMPLETED
         ):
-            stock_changes = {}
+            items = []
 
             for item_form in formset.forms:
                 if not item_form.cleaned_data:
@@ -146,31 +174,14 @@ class SaleAdmin(admin.ModelAdmin):
                 drug = item_form.cleaned_data["drug"]
                 quantity = item_form.cleaned_data["quantity"]
 
-                stock_changes[drug.id] = (
-                    stock_changes.get(drug.id, 0)
-                    + quantity
-                )
+                items.append((drug, quantity))
 
-            # Check stock BEFORE changing anything
-            for drug_id, change_amount in stock_changes.items():
-                drug = Drug.objects.get(id=drug_id)
+            complete_sale(form.instance, items)
 
-                if change_amount > drug.quantity_in_stock:
-                    raise ValidationError(
-                        f"Insufficient stock for {drug.name}."
-                    )
-
-            # Apply stock changes and save SaleItems
-            with transaction.atomic():
-                for drug_id, change_amount in stock_changes.items():
-                    drug = Drug.objects.get(id=drug_id)
-
-                    drug.quantity_in_stock -= change_amount
-                    drug.save()
-
-                formset.save()
+            formset.save()
 
             return
+
 
         if form.instance.status == Sale.Status.COMPLETED:
             stock_changes = {}
@@ -227,27 +238,13 @@ class SaleAdmin(admin.ModelAdmin):
                         + new_quantity
                     )
 
-            # Check stock BEFORE changing anything
-            for drug_id, change_amount in stock_changes.items():
-                if change_amount > 0:
-                    drug = Drug.objects.get(id=drug_id)
+            update_completed_sale(stock_changes)
 
-                    if change_amount > drug.quantity_in_stock:
-                        raise ValidationError(
-                            f"Insufficient stock for {drug.name}."
-                        )
+            formset.save()
 
-            # Apply stock changes and save SaleItems
-            with transaction.atomic():
-                for drug_id, change_amount in stock_changes.items():
-                    drug = Drug.objects.get(id=drug_id)
-
-                    drug.quantity_in_stock -= change_amount
-                    drug.save()
-
-                formset.save()
         else:
             formset.save()
+
 
 
 @admin.register(SaleItem)
