@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Pharmacist Dashboard</title>
+</head>
+<body>
+
+    <h1>Pharmacist Dashboard</h1>
+
+    <p>Welcome, {{ request.user.username }}</p>
+
+    <p>You are logged in as a Pharmacist.</p>
+
+    <h2>Today's Sales</h2>
+
+    <p>Completed Sales Today: {{ today_sales }}</p>
+
+    <p>Today's Revenue: Ksh {{ today_revenue }}</p>
+
+    <h2>Stock Alerts</h2>
+
+    <p>Low Stock Drugs: {{ low_stock_drugs }}</p>
+
+    <p>Expired Drugs: {{ expired_drugs }}</p>
+
+    <h2>Recent Sales</h2>
+
+    {% for sale in recent_sales %}
+        <p>
+            Sale #{{ sale.id }} |
+            Patient: {{ sale.patient }} |
+            Amount: Ksh {{ sale.total_amount }} |
+            Status: {{ sale.status }}
+        </p>
+    {% empty %}
+        <p>No sales found.</p>
+    {% endfor %}
+
+</body>
+</html>

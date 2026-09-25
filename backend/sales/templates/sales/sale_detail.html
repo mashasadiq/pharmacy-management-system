@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Sale #{{ sale.id }}</title>
+</head>
+<body>
+
+    <h1>Sale #{{ sale.id }}</h1>
+
+    <p>
+        <strong>Patient:</strong>
+        {{ sale.patient }}
+    </p>
+
+    <p>
+        <strong>Pharmacist:</strong>
+        {{ sale.pharmacist }}
+    </p>
+
+    <p>
+        <strong>Payment Method:</strong>
+        {{ sale.payment_method }}
+    </p>
+
+    <p>
+        <strong>Status:</strong>
+        {{ sale.status }}
+    </p>
+
+    <p>
+        <strong>Date:</strong>
+        {{ sale.sale_date }}
+    </p>
+
+    <h2>Items</h2>
+
+    {% for item in items %}
+        <p>
+            {{ item.drug.name }}
+            — Quantity: {{ item.quantity }}
+            — Unit Price: Ksh {{ item.unit_price }}
+            — Subtotal: Ksh {{ item.subtotal }}
+        </p>
+    {% empty %}
+        <p>No items found.</p>
+    {% endfor %}
+
+    <h2>
+        Total: Ksh {{ sale.total_amount }}
+    </h2>
+
+    <p>
+        <a href="{% url 'sales_list' %}">Back to Sales</a>
+    </p>
+
+</body>
+</html>

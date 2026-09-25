@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Admin Dashboard</title>
+</head>
+<body>
+
+    <h1>Administrator Dashboard</h1>
+
+    <p>Welcome, {{ request.user.username }}</p>
+
+    <h2>Overview</h2>
+
+    <p>Total Drugs: {{ total_drugs }}</p>
+
+    <p>Low Stock Drugs: {{ low_stock_drugs }}</p>
+
+    <p>Total Patients: {{ total_patients }}</p>
+
+    <p>Total Sales: {{ total_sales }}</p>
+    <p>Expired Drugs: {{ expired_drugs }}</p>
+
+    <p>Expiring Within 30 Days: {{ expiring_soon }}</p>
+
+<h2>Recent Sales</h2>
+
+{% for sale in recent_sales %}
+    <p>
+        Sale #{{ sale.id }} |
+        Patient: {{ sale.patient }} |
+        Pharmacist: {{ sale.pharmacist }} |
+        Amount: Ksh {{ sale.total_amount }} |
+        Status: {{ sale.status }}
+    </p>
+{% empty %}
+    <p>No sales found.</p>
+{% endfor %}
+
+
+<h2>Recent Activity</h2>
+
+{% for activity in recent_activity %}
+    <p>
+        {{ activity.timestamp }} |
+        User: {{ activity.user }} |
+        {{ activity.description }}
+    </p>
+{% empty %}
+    <p>No recent activity.</p>
+{% endfor %}
+
+<h2>Today's Sales</h2>
+
+<p>Completed Sales Today: {{ today_sales }}</p>
+
+<p>Today's Revenue: Ksh {{ today_revenue }}</p>
+
+</body>
+</html>

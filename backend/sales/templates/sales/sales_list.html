@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Sales</title>
+</head>
+<body>
+
+    <h1>Sales</h1>
+<a href="{% url 'create_sale_page' %}">Create New Sale</a>
+    {% for sale in sales %}
+        <p>
+            <a href="{% url 'sale_detail' sale.id %}">
+            Sale #{{ sale.id }}
+            </a> |
+            Patient: {{ sale.patient }} |
+            Pharmacist: {{ sale.pharmacist }} |
+            Amount: Ksh {{ sale.total_amount }} |
+            Payment: {{ sale.payment_method }} |
+            Status: {{ sale.status }} |
+            Date: {{ sale.sale_date }}
+        </p>
+    {% empty %}
+        <p>No sales found.</p>
+    {% endfor %}
+
+</body>
+</html>

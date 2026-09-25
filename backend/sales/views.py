@@ -3,13 +3,36 @@ from decimal import Decimal
 
 from django.db import transaction
 from django.http import JsonResponse
-from django.shortcuts import get_object_or_404
+from django.shortcuts import get_object_or_404, render
+from django.contrib.auth.decorators import login_required
+from django.views.decorators.csrf import ensure_csrf_cookie
 
 from inventory.models import Drug
 from patients.models import Patient
 from .models import Sale, SaleItem
 
 
+@login_required
+@ensure_csrf_cookie
+def create_sale_page(request):
+    patients = Patient.objects.all()
+
+    drugs = Drug.objects.filter(
+        quantity_in_stock__gt=0
+    )
+
+    return render(
+        request,
+        "sales/create_sale.html",
+        {
+            "patients": patients,
+            "drugs": drugs,
+            "payment_methods": Sale.PaymentMethod.choices,
+        },
+    )
+
+
+@login_required
 @transaction.atomic
 def create_sale(request):
     if request.method != "POST":
@@ -101,3 +124,41 @@ def create_sale(request):
             {"error": str(e)},
             status=500,
         )
+
+
+@login_required
+def sales_list(request):
+    sales = Sale.objects.select_related(
+        "patient",
+        "pharmacist",
+    ).order_by("-sale_date")
+
+    return render(
+        request,
+        "sales/sales_list.html",
+        {"sales": sales},
+    )
+
+@login_required
+def sale_detail(request, sale_id):
+    """
+    Display the details of a single sale and its items.
+    """
+    sale = get_object_or_404(
+        Sale.objects.select_related(
+            "patient",
+            "pharmacist",
+        ),
+        id=sale_id,
+    )
+
+    items = sale.items.select_related("drug")
+
+    return render(
+        request,
+        "sales/sale_detail.html",
+        {
+            "sale": sale,
+            "items": items,
+        },
+    )

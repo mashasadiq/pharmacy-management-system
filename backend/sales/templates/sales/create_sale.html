@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+
+<html>
+<head>
+    <title>Create Sale</title>
+</head>
+<body>
+
+<h1>Create Sale</h1>
+
+<form id="sale-form">
+    {% csrf_token %}
+
+    <h2>Patient</h2>
+
+    <select id="patient" required>
+        <option value="">Select Patient</option>
+
+        {% for patient in patients %}
+            <option value="{{ patient.id }}">
+                {{ patient }}
+            </option>
+        {% endfor %}
+    </select>
+
+    <h2>Payment Method</h2>
+
+    <select id="payment_method" required>
+        <option value="">Select Payment Method</option>
+
+        {% for value, label in payment_methods %}
+            <option value="{{ value }}">
+                {{ label }}
+            </option>
+        {% endfor %}
+    </select>
+
+    <h2>Drug</h2>
+
+    <select id="drug" required>
+        <option value="">Select Drug</option>
+
+        {% for drug in drugs %}
+            <option value="{{ drug.id }}">
+                {{ drug.name }} - Ksh {{ drug.selling_price }}
+                (Stock: {{ drug.quantity_in_stock }})
+            </option>
+        {% endfor %}
+    </select>
+
+    <h2>Quantity</h2>
+
+    <input
+        type="number"
+        id="quantity"
+        min="1"
+        required
+    >
+
+    <br><br>
+
+    <button type="submit">Complete Sale</button>
+
+</form>
+
+<p id="message"></p>
+
+<script>
+    document.getElementById("sale-form").addEventListener("submit", async function(event) {
+        event.preventDefault();
+
+        const patient = document.getElementById("patient").value;
+        const paymentMethod = document.getElementById("payment_method").value;
+        const drug = document.getElementById("drug").value;
+        const quantity = document.getElementById("quantity").value;
+
+        const csrfToken = document.querySelector(
+            "[name=csrfmiddlewaretoken]"
+        ).value;
+
+        const response = await fetch("/sales/api/create/", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                "X-CSRFToken": csrfToken
+            },
+            body: JSON.stringify({
+                patient: patient,
+                payment_method: paymentMethod,
+                items: [
+                    {
+                        drug_id: drug,
+                        quantity: quantity
+                    }
+                ]
+            })
+        });
+
+        const data = await response.json();
+
+        const message = document.getElementById("message");
+
+        if (response.ok) {
+            message.textContent =
+                "Sale completed successfully. Sale #" +
+                data.sale_id +
+                " — Total: Ksh " +
+                data.total_amount;
+
+            document.getElementById("sale-form").reset();
+        } else {
+            message.textContent = "Error: " + data.error;
+        }
+    });
+</script>
+
+</body>
+</html>
