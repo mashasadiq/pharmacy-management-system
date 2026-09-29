@@ -1,9 +1,8 @@
-<!DOCTYPE html>
-<html>
-<head>
-    <title>Pharmacist Dashboard</title>
-</head>
-<body>
+{% extends "base.html" %}
+
+{% block title %}Pharmacist Dashboard{% endblock %}
+
+{% block content %}
 
     <h1>Pharmacist Dashboard</h1>
 
@@ -11,30 +10,143 @@
 
     <p>You are logged in as a Pharmacist.</p>
 
-    <h2>Today's Sales</h2>
 
-    <p>Completed Sales Today: {{ today_sales }}</p>
+    <h2>Today's Performance</h2>
 
-    <p>Today's Revenue: Ksh {{ today_revenue }}</p>
+<div class="dashboard-grid">
+
+    <div class="dashboard-card">
+        <h3>Completed Sales Today</h3>
+
+        <p>{{ today_sales }}</p>
+
+        <a href="{% url 'sales_list' %}">
+            View Sales
+        </a>
+    </div>
+
+
+    <div class="dashboard-card">
+        <h3>Today's Revenue</h3>
+
+        <p>Ksh {{ today_revenue }}</p>
+    </div>
+
+</div>
+
 
     <h2>Stock Alerts</h2>
 
-    <p>Low Stock Drugs: {{ low_stock_drugs }}</p>
+<div class="dashboard-grid">
 
-    <p>Expired Drugs: {{ expired_drugs }}</p>
+    <div class="dashboard-card">
+        <h3>Low Stock Drugs</h3>
+
+        <p>{{ low_stock_drugs }}</p>
+
+        <a href="{% url 'low_stock' %}">
+            View Low Stock
+        </a>
+    </div>
+
+
+    <div class="dashboard-card">
+        <h3>Expired Drugs</h3>
+
+        <p>{{ expired_drugs }}</p>
+
+        <a href="{% url 'expired_drugs' %}">
+            View Expired Drugs
+        </a>
+    </div>
+
+</div>
+
 
     <h2>Recent Sales</h2>
 
-    {% for sale in recent_sales %}
-        <p>
-            Sale #{{ sale.id }} |
-            Patient: {{ sale.patient }} |
-            Amount: Ksh {{ sale.total_amount }} |
-            Status: {{ sale.status }}
-        </p>
-    {% empty %}
-        <p>No sales found.</p>
-    {% endfor %}
+<table class="dashboard-table">
 
-</body>
-</html>
+    <thead>
+        <tr>
+            <th>Sale</th>
+            <th>Patient</th>
+            <th>Amount</th>
+            <th>Status</th>
+        </tr>
+    </thead>
+
+    <tbody>
+
+        {% for sale in recent_sales %}
+
+            <tr>
+                <td>
+                    <a href="{% url 'sale_detail' sale.id %}">
+                        Sale #{{ sale.id }}
+                    </a>
+                </td>
+
+                <td>
+                    {{ sale.patient }}
+                </td>
+
+                <td>
+                    Ksh {{ sale.total_amount }}
+                </td>
+
+                <td>
+                    {{ sale.status }}
+                </td>
+            </tr>
+
+        {% empty %}
+
+            <tr>
+                <td colspan="4">
+                    No sales found.
+                </td>
+            </tr>
+
+        {% endfor %}
+
+    </tbody>
+
+</table>
+
+
+    <h2>Quick Actions</h2>
+
+<div class="action-grid">
+
+    <a
+        href="{% url 'create_purchase_page' %}"
+        class="action-button"
+    >
+        Record Purchase
+    </a>
+
+    <a
+        href="{% url 'purchase_list' %}"
+        class="action-button"
+    >
+        Purchase History
+    </a>
+
+    <a
+        href="{% url 'inventory_list' %}"
+        class="action-button"
+    >
+        View Inventory
+    </a>
+
+    <a
+        href="{% url 'sales_list' %}"
+        class="action-button"
+    >
+        View Sales
+    </a>
+
+</div>
+
+{% endblock %}

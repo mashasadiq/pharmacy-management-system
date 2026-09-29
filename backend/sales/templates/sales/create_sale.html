@@ -11,107 +11,229 @@
 <form id="sale-form">
     {% csrf_token %}
 
-    <h2>Patient</h2>
+<h2>Patient</h2>
 
-    <select id="patient" required>
-        <option value="">Select Patient</option>
+<select id="patient" required>
+    <option value="">Select Patient</option>
 
-        {% for patient in patients %}
-            <option value="{{ patient.id }}">
-                {{ patient }}
-            </option>
-        {% endfor %}
-    </select>
+    {% for patient in patients %}
+        <option value="{{ patient.id }}">
+            {{ patient }}
+        </option>
+    {% endfor %}
+</select>
 
-    <h2>Payment Method</h2>
+<h2>Payment Method</h2>
 
-    <select id="payment_method" required>
-        <option value="">Select Payment Method</option>
+<select id="payment_method" required>
+    <option value="">Select Payment Method</option>
 
-        {% for value, label in payment_methods %}
-            <option value="{{ value }}">
-                {{ label }}
-            </option>
-        {% endfor %}
-    </select>
+    {% for value, label in payment_methods %}
+        <option value="{{ value }}">
+            {{ label }}
+        </option>
+    {% endfor %}
+</select>
 
-    <h2>Drug</h2>
+<h2>Sale Items</h2>
 
-    <select id="drug" required>
-        <option value="">Select Drug</option>
+<div id="sale-items">
 
-        {% for drug in drugs %}
-            <option value="{{ drug.id }}">
-                {{ drug.name }} - Ksh {{ drug.selling_price }}
-                (Stock: {{ drug.quantity_in_stock }})
-            </option>
-        {% endfor %}
-    </select>
+    <div class="sale-item">
+        <select class="drug" required>
+            <option value="">Select Drug</option>
 
-    <h2>Quantity</h2>
+            {% for drug in drugs %}
+                <option
+                    value="{{ drug.id }}"
+                    data-price="{{ drug.selling_price }}"
+                    data-stock="{{ drug.quantity_in_stock }}"
+                >
+                    {{ drug.name }} - Ksh {{ drug.selling_price }}
+                    (Stock: {{ drug.quantity_in_stock }})
+                </option>
+            {% endfor %}
+        </select>
 
-    <input
-        type="number"
-        id="quantity"
-        min="1"
-        required
-    >
+        <input
+            type="number"
+            class="quantity"
+            min="1"
+            placeholder="Quantity"
+            required
+        >
 
-    <br><br>
+        <button type="button" class="remove-item">
+            Remove
+        </button>
+    </div>
 
-    <button type="submit">Create Sale</button>
+</div>
+
+<br>
+
+<button type="button" id="add-item">
+    Add Item
+</button>
+
+<h3>
+    Total: Ksh <span id="total">0.00</span>
+</h3>
+
+<button type="submit">
+    Create Sale
+</button>
 
 </form>
 
 <p id="message"></p>
 
 <script>
-    document.getElementById("sale-form").addEventListener("submit", async function(event) {
-        event.preventDefault();
+    const saleItemsContainer = document.getElementById("sale-items");
+    const addItemButton = document.getElementById("add-item");
+    const totalDisplay = document.getElementById("total");
 
-        const patient = document.getElementById("patient").value;
-        const paymentMethod = document.getElementById("payment_method").value;
-        const drug = document.getElementById("drug").value;
-        const quantity = document.getElementById("quantity").value;
+    function updateTotal() {
+        let total = 0;
 
-        const csrfToken = document.querySelector(
-            "[name=csrfmiddlewaretoken]"
-        ).value;
+        const saleItems = document.querySelectorAll(".sale-item");
 
-        const response = await fetch("/sales/api/create/", {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json",
-                "X-CSRFToken": csrfToken
-            },
-            body: JSON.stringify({
-                patient: patient,
-                payment_method: paymentMethod,
-                items: [
-                    {
-                        drug_id: drug,
-                        quantity: quantity
-                    }
-                ]
-            })
+        saleItems.forEach(function(item) {
+            const drugSelect = item.querySelector(".drug");
+            const quantityInput = item.querySelector(".quantity");
+
+            const selectedOption =
+                drugSelect.options[drugSelect.selectedIndex];
+
+            const price = parseFloat(
+                selectedOption.dataset.price || 0
+            );
+
+            const quantity = parseInt(
+                quantityInput.value || 0
+            );
+
+            total += price * quantity;
         });
 
-        const data = await response.json();
+        totalDisplay.textContent = total.toFixed(2);
+    }
 
-        const message = document.getElementById("message");
+    function attachItemEvents(item) {
+        const drugSelect = item.querySelector(".drug");
+        const quantityInput = item.querySelector(".quantity");
+        const removeButton = item.querySelector(".remove-item");
 
-        if (response.ok) {
-            message.textContent =
-                "Sale created successfully. Sale #" +
-                data.sale_id +
-                " — Total: Ksh " +
-                data.total_amount;
+        drugSelect.addEventListener("change", updateTotal);
+        quantityInput.addEventListener("input", updateTotal);
 
-            document.getElementById("sale-form").reset();
-        } else {
-            message.textContent = "Error: " + data.error;
-        }
+        removeButton.addEventListener("click", function() {
+            const items = document.querySelectorAll(".sale-item");
+
+            if (items.length === 1) {
+                alert("A sale must contain at least one item.");
+                return;
+            }
+
+            item.remove();
+            updateTotal();
+        });
+    }
+
+    attachItemEvents(
+        document.querySelector(".sale-item")
+    );
+
+    addItemButton.addEventListener("click", function() {
+        const firstItem =
+            document.querySelector(".sale-item");
+
+        const newItem = firstItem.cloneNode(true);
+
+        newItem.querySelector(".drug").value = "";
+        newItem.querySelector(".quantity").value = "";
+
+        saleItemsContainer.appendChild(newItem);
+
+        attachItemEvents(newItem);
     });
+
+    document.getElementById("sale-form").addEventListener(
+        "submit",
+        async function(event) {
+            event.preventDefault();
+
+            const patient =
+                document.getElementById("patient").value;
+
+            const paymentMethod =
+                document.getElementById("payment_method").value;
+
+            const saleItems =
+                document.querySelectorAll(".sale-item");
+
+            const items = [];
+
+            saleItems.forEach(function(item) {
+                const drug =
+                    item.querySelector(".drug").value;
+
+                const quantity =
+                    item.querySelector(".quantity").value;
+
+                if (drug && quantity) {
+                    items.push({
+                        drug_id: drug,
+                        quantity: quantity
+                    });
+                }
+            });
+
+            if (items.length === 0) {
+                document.getElementById("message").textContent =
+                    "Please add at least one sale item.";
+
+                return;
+            }
+
+            const csrfToken =
+                document.querySelector(
+                    "[name=csrfmiddlewaretoken]"
+                ).value;
+
+            const response = await fetch(
+                "/sales/api/create/",
+                {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                        "X-CSRFToken": csrfToken
+                    },
+                    body: JSON.stringify({
+                        patient: patient,
+                        payment_method: paymentMethod,
+                        items: items
+                    })
+                }
+            );
+
+            const data = await response.json();
+
+            const message =
+                document.getElementById("message");
+
+            if (response.ok) {
+                    window.location.href =
+                        "/sales/" + data.sale_id + "/";
+                }
+            
+            
+            else {
+                message.textContent =
+                    "Error: " + data.error;
+            }
+        }
+    );
 </script>
 
 </body>

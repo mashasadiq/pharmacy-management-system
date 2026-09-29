@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+
+<html>
+<head>
+    <title>Purchase #{{ purchase.id }}</title>
+</head>
+
+<body>
+
+<h1>Purchase #{{ purchase.id }}</h1>
+
+<p>
+    <strong>Drug:</strong>
+    {{ purchase.drug.name }}
+</p>
+
+<p>
+    <strong>Supplier:</strong>
+    {{ purchase.supplier.company_name }}
+</p>
+
+<p>
+    <strong>Quantity:</strong>
+    {{ purchase.quantity }}
+</p>
+
+<p>
+    <strong>Cost Price:</strong>
+    Ksh {{ purchase.cost_price }}
+</p>
+
+<p>
+    <strong>Purchase Date:</strong>
+    {{ purchase.purchase_date }}
+</p>
+
+<p>
+    <strong>Invoice Number:</strong>
+    {{ purchase.invoice_number }}
+</p>
+
+<p>
+    <strong>Received By:</strong>
+    {{ purchase.received_by.username }}
+</p>
+
+<p>
+    <strong>Remarks:</strong>
+    {{ purchase.remarks|default:"No remarks." }}
+</p>
+
+<p>
+    <strong>Recorded At:</strong>
+    {{ purchase.created_at }}
+</p>
+
+<br>
+
+<a href="{% url 'purchase_list' %}">
+    Back to Purchase History
+</a>
+
+</body>
+</html>
