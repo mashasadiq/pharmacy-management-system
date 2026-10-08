@@ -2,25 +2,91 @@
 <html>
 <head>
     <title>Sales</title>
+
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 30px;
+        }
+
+        .search-form {
+            margin: 20px 0;
+        }
+
+        .search-form input {
+            padding: 8px;
+            width: 300px;
+        }
+
+        .search-form button {
+            padding: 8px 14px;
+            cursor: pointer;
+        }
+
+        .clear-search {
+            margin-left: 8px;
+        }
+
+        .sale {
+            margin-bottom: 12px;
+        }
+    </style>
 </head>
+
 <body>
 
     <h1>Sales</h1>
-<a href="{% url 'create_sale_page' %}">Create New Sale</a>
+
+    <a href="{% url 'create_sale_page' %}">
+        Create New Sale
+    </a>
+
+    <form method="get" class="search-form">
+
+        <input
+            type="text"
+            name="invoice"
+            value="{{ invoice }}"
+            placeholder="Search by invoice number"
+        >
+
+        <button type="submit">
+            Search
+        </button>
+
+        {% if invoice %}
+            <a href="{% url 'sales_list' %}" class="clear-search">
+                Clear
+            </a>
+        {% endif %}
+
+    </form>
+
     {% for sale in sales %}
-        <p>
+
+        <div class="sale">
+
             <a href="{% url 'sale_detail' sale.id %}">
-            Sale #{{ sale.id }}
-            </a> |
-            Patient: {{ sale.patient }} |
-            Pharmacist: {{ sale.pharmacist }} |
-            Amount: Ksh {{ sale.total_amount }} |
-            Payment: {{ sale.payment_method }} |
-            Status: {{ sale.status }} |
-            Date: {{ sale.sale_date }}
-        </p>
+                Sale #{{ sale.id }}
+            </a>
+
+            {% if sale.invoice_number %}
+                | Invoice: {{ sale.invoice_number }}
+            {% endif %}
+
+            | Patient: {{ sale.patient }}
+            | Pharmacist: {{ sale.pharmacist }}
+            | Amount: Ksh {{ sale.total_amount }}
+            | Payment: {{ sale.payment_method }}
+            | Status: {{ sale.status }}
+            | Date: {{ sale.sale_date }}
+
+        </div>
+
     {% empty %}
+
         <p>No sales found.</p>
+
     {% endfor %}
 
 </body>

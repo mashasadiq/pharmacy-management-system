@@ -1,9 +1,9 @@
-from django.shortcuts import get_object_or_404, render
+from django.shortcuts import get_object_or_404, render, redirect
 from django.db.models import F, Q
 from django.utils import timezone
 
 from .models import Drug
-
+from .forms import DrugForm
 
 
 def inventory_list(request):
@@ -101,4 +101,23 @@ def check_stock_availability(request, drug_id):
             "current_stock": drug.quantity_in_stock,
             "available": available,
         },
+    )
+
+
+def create_drug(request):
+    """Display and process the form for registering a new drug."""
+
+    if request.method == "POST":
+        form = DrugForm(request.POST)
+
+        if form.is_valid():
+            form.save()
+            return redirect("inventory_list")
+    else:
+        form = DrugForm()
+
+    return render(
+        request,
+        "inventory/create_drug.html",
+        {"form": form},
     )

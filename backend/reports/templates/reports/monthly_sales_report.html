@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Monthly Sales Report</title>
+</head>
+<body>
+
+    <h1>Monthly Sales Report</h1>
+
+    <form method="GET">
+
+        <label for="year">Year:</label>
+
+        <input
+            type="number"
+            id="year"
+            name="year"
+            min="2000"
+            max="2100"
+            value="{{ year }}"
+            required
+        >
+
+        <label for="month">Month:</label>
+
+        <select id="month" name="month" required>
+            <option value="">Select Month</option>
+
+            <option value="1" {% if month == "1" %}selected{% endif %}>
+                January
+            </option>
+
+            <option value="2" {% if month == "2" %}selected{% endif %}>
+                February
+            </option>
+
+            <option value="3" {% if month == "3" %}selected{% endif %}>
+                March
+            </option>
+
+            <option value="4" {% if month == "4" %}selected{% endif %}>
+                April
+            </option>
+
+            <option value="5" {% if month == "5" %}selected{% endif %}>
+                May
+            </option>
+
+            <option value="6" {% if month == "6" %}selected{% endif %}>
+                June
+            </option>
+
+            <option value="7" {% if month == "7" %}selected{% endif %}>
+                July
+            </option>
+
+            <option value="8" {% if month == "8" %}selected{% endif %}>
+                August
+            </option>
+
+            <option value="9" {% if month == "9" %}selected{% endif %}>
+                September
+            </option>
+
+            <option value="10" {% if month == "10" %}selected{% endif %}>
+                October
+            </option>
+
+            <option value="11" {% if month == "11" %}selected{% endif %}>
+                November
+            </option>
+
+            <option value="12" {% if month == "12" %}selected{% endif %}>
+                December
+            </option>
+        </select>
+
+        <button type="submit">Generate Report</button>
+
+    </form>
+
+    {% if sales %}
+
+        <h2>Sales for {{ month }}/{{ year }}</h2>
+
+        <p>
+            Number of completed sales:
+            {{ sales|length }}
+        </p>
+        <p>
+            Total Revenue: Ksh {{ total_revenue }}
+        </p>
+
+        <table border="1">
+            <thead>
+                <tr>
+                    <th>Sale ID</th>
+                    <th>Patient</th>
+                    <th>Pharmacist</th>
+                    <th>Total Amount</th>
+                    <th>Payment Method</th>
+                    <th>Sale Date</th>
+                </tr>
+            </thead>
+
+            <tbody>
+
+                {% for sale in sales %}
+                <tr>
+                    <td>{{ sale.id }}</td>
+
+                    <td>
+                        {{ sale.patient.first_name }}
+                        {{ sale.patient.last_name }}
+                    </td>
+
+                    <td>{{ sale.pharmacist }}</td>
+
+                    <td>Ksh {{ sale.total_amount }}</td>
+
+                    <td>{{ sale.payment_method }}</td>
+
+                    <td>{{ sale.sale_date }}</td>
+                </tr>
+                {% endfor %}
+
+            </tbody>
+        </table>
+
+    {% elif year and month %}
+
+        <p>
+            No completed sales found for {{ month }}/{{ year }}.
+        </p>
+
+    {% endif %}
+
+</body>
+</html>

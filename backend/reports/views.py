@@ -1,28 +1,120 @@
-from django.shortcuts import render, redirect
+from django.shortcuts import render
 
-# Create your views here.
-from django.contrib import messages
-
-from .models import Purchase
-from .forms import PurchaseForm
+from .services import ReportService
 
 
-def create_purchase(request):
-    if request.method == "POST":
-        form = PurchaseForm(request.POST)
+def reports_home(request):
+    """Display links to all available pharmacy reports."""
+    return render(
+        request,
+        "reports/reports_home.html",
+    )
 
-        if form.is_valid():
-            purchase = form.save()
 
-            # Update inventory
-            drug = purchase.drug
-            drug.quantity_in_stock += purchase.quantity
-            drug.save()
+def inventory_report(request):
+    """Display the current pharmacy inventory report."""
+    drugs = ReportService.inventory_report()
 
-            messages.success(request, "Purchase recorded successfully.")
-            return redirect("purchase_list")
+    return render(
+        request,
+        "reports/inventory_report.html",
+        {"drugs": drugs},
+    )
 
-    else:
-        form = PurchaseForm()
 
-    return render(request, "purchases/create_purchase.html", {"form": form})
+def low_stock_report(request):
+    """Display drugs whose stock is at or below the minimum level."""
+    drugs = ReportService.low_stock_report()
+
+    return render(
+        request,
+        "reports/low_stock_report.html",
+        {"drugs": drugs},
+    )
+
+
+def expired_drugs_report(request):
+    """Display drugs that have already expired."""
+    drugs = ReportService.expired_drugs_report()
+
+    return render(
+        request,
+        "reports/expired_drugs_report.html",
+        {"drugs": drugs},
+    )
+
+
+def patient_report(request):
+    """Display all registered patients."""
+    patients = ReportService.patient_report()
+
+    return render(
+        request,
+        "reports/patient_report.html",
+        {"patients": patients},
+    )
+
+
+def purchase_report(request):
+    """Display purchase records and purchase summary."""
+    purchases, total_units, total_cost = ReportService.purchase_report()
+
+    return render(
+        request,
+        "reports/purchase_report.html",
+        {
+            "purchases": purchases,
+            "total_units": total_units,
+            "total_cost": total_cost,
+        },
+    )
+
+
+def daily_sales_report(request):
+    """Display completed sales and revenue for a selected date."""
+    report_date = request.GET.get("date")
+
+    sales = None
+    total_revenue = 0
+
+    if report_date:
+        sales, total_revenue = ReportService.daily_sales_report(
+            report_date
+        )
+
+    return render(
+        request,
+        "reports/daily_sales_report.html",
+        {
+            "sales": sales,
+            "report_date": report_date,
+            "total_revenue": total_revenue,
+        },
+    )
+
+
+
+def monthly_sales_report(request):
+    """Display completed sales and revenue for a selected month."""
+    year = request.GET.get("year")
+    month = request.GET.get("month")
+
+    sales = None
+    total_revenue = 0
+
+    if year and month:
+        sales, total_revenue = ReportService.monthly_sales_report(
+            year,
+            month,
+        )
+
+    return render(
+        request,
+        "reports/monthly_sales_report.html",
+        {
+            "sales": sales,
+            "year": year,
+            "month": month,
+            "total_revenue": total_revenue,
+        },
+    )

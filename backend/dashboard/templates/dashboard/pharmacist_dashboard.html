@@ -1,8 +1,8 @@
-{% extends "base.html" %}
+{% extends "dashboard.html" %}
 
 {% block title %}Pharmacist Dashboard{% endblock %}
 
-{% block content %}
+{% block dashboard_content %}
 
     <h1>Pharmacist Dashboard</h1>
 
@@ -20,8 +20,8 @@
 
         <p>{{ today_sales }}</p>
 
-        <a href="{% url 'sales_list' %}">
-            View Sales
+        <a href="{% url 'sales_list' %}?date=today">
+            View Today's Sales
         </a>
     </div>
 
@@ -120,17 +120,17 @@
 <div class="action-grid">
 
     <a
-        href="{% url 'create_purchase_page' %}"
+        href="{% url 'create_sale_page' %}"
         class="action-button"
     >
-        Record Purchase
+        New Sale
     </a>
 
     <a
-        href="{% url 'purchase_list' %}"
+        href="{% url 'sales_list' %}"
         class="action-button"
     >
-        Purchase History
+        View Sales
     </a>
 
     <a
@@ -141,10 +141,10 @@
     </a>
 
     <a
-        href="{% url 'sales_list' %}"
+        href="{% url 'low_stock' %}"
         class="action-button"
     >
-        View Sales
+        View Low Stock
     </a>
 
 </div>

@@ -39,7 +39,11 @@ class Drug(models.Model):
     generic_name = models.CharField(max_length=150)
     brand = models.CharField(max_length=100)
 
-    barcode = models.CharField(max_length=100, unique=True)
+    barcode = models.CharField(
+                max_length=100,
+                unique=True,
+                blank=True,
+            )
     batch_number = models.CharField(max_length=100)
 
     category = models.CharField(
@@ -75,6 +79,28 @@ class Drug(models.Model):
 
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
+
+
+    def save(self, *args, **kwargs):
+    #Automatically generate a unique internal barcode for new drugs.
+
+        if not self.barcode:
+            last_drug = (
+                Drug.objects
+                .filter(barcode__startswith="100000")
+                .order_by("-barcode")
+                .first()
+            )
+
+            if last_drug:
+                next_number = int(last_drug.barcode) + 1
+            else:
+                next_number = 100000001
+
+            self.barcode = str(next_number)
+
+        super().save(*args, **kwargs) 
+
 
     class Meta:
         ordering = ["name"]

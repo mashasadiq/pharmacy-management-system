@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Daily Sales Report</title>
+</head>
+<body>
+
+    <h1>Daily Sales Report</h1>
+
+    <form method="GET">
+        <label for="date">Select Date:</label>
+
+        <input
+            type="date"
+            id="date"
+            name="date"
+            value="{{ report_date }}"
+            required
+        >
+
+        <button type="submit">Generate Report</button>
+    </form>
+
+    {% if sales %}
+        <h2>Sales for {{ report_date }}</h2>
+
+        <p>Number of completed sales: {{ sales|length }}</p>
+        <p>
+            Total Revenue: Ksh {{ total_revenue }}
+        </p>
+
+        <table border="1">
+            <thead>
+                <tr>
+                    <th>Sale ID</th>
+                    <th>Patient</th>
+                    <th>Pharmacist</th>
+                    <th>Total Amount</th>
+                    <th>Payment Method</th>
+                    <th>Sale Date</th>
+                </tr>
+            </thead>
+
+            <tbody>
+                {% for sale in sales %}
+                <tr>
+                    <td>{{ sale.id }}</td>
+
+                    <td>
+                        {{ sale.patient.first_name }}
+                        {{ sale.patient.last_name }}
+                    </td>
+
+                    <td>{{ sale.pharmacist }}</td>
+
+                    <td>Ksh {{ sale.total_amount }}</td>
+
+                    <td>{{ sale.payment_method }}</td>
+
+                    <td>{{ sale.sale_date }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+
+    {% elif report_date %}
+        <p>No completed sales found for {{ report_date }}.</p>
+    {% endif %}
+
+</body>
+</html>
+

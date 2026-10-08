@@ -30,6 +30,14 @@ class Notification(models.Model):
         related_name="notifications"
     )
 
+    drug = models.ForeignKey(
+    "inventory.Drug",
+    on_delete=models.CASCADE,
+    null=True,
+    blank=True,
+    related_name="notifications",
+    )
+
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:

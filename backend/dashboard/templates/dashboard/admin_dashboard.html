@@ -1,15 +1,12 @@
-{% extends "base.html" %}
+{% extends "dashboard.html" %}
 
 {% block title %}Admin Dashboard{% endblock %}
 
-{% block content %}
+{% block dashboard_content %}
 
     <h1>Administrator Dashboard</h1>
 
     <p>Welcome, {{ request.user.username }}</p>
-
-
-    <h2>Overview</h2>
 
     <h2>Overview</h2>
 
@@ -86,6 +83,10 @@
         <h3>Completed Sales Today</h3>
 
         <p>{{ today_sales }}</p>
+
+        <a href="{% url 'sales_list' %}?date=today">
+            View Today's Sales
+        </a>
     </div>
 
 
@@ -96,9 +97,6 @@
     </div>
 
 </div>
-
-
-    <h2>Recent Sales</h2>
 
     <h2>Recent Sales</h2>
 

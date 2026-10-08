@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Pharmacy Reports</title>
+</head>
+<body>
+
+    <h1>Pharmacy Reports</h1>
+
+    <h2>Inventory Reports</h2>
+
+    <ul>
+        <li>
+            <a href="{% url 'inventory_report' %}">
+                Inventory Report
+            </a>
+        </li>
+
+        <li>
+            <a href="{% url 'low_stock_report' %}">
+                Low Stock Report
+            </a>
+        </li>
+
+        <li>
+            <a href="{% url 'expired_drugs_report' %}">
+                Expired Drugs Report
+            </a>
+        </li>
+    </ul>
+
+
+    <h2>Sales Reports</h2>
+
+    <ul>
+        <li>
+            <a href="{% url 'daily_sales_report' %}">
+                Daily Sales Report
+            </a>
+        </li>
+
+        <li>
+            <a href="{% url 'monthly_sales_report' %}">
+                Monthly Sales Report
+            </a>
+        </li>
+    </ul>
+
+
+    <h2>Other Reports</h2>
+
+    <ul>
+        <li>
+            <a href="{% url 'purchase_report' %}">
+                Purchase Report
+            </a>
+        </li>
+
+        <li>
+            <a href="{% url 'patient_report' %}">
+                Patient Report
+            </a>
+        </li>
+    </ul>
+
+</body>
+</html>

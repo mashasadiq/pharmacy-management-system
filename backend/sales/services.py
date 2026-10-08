@@ -1,4 +1,4 @@
-#services.py  core stock business logic centralized, is responsible for understanding the actual stock operation.
+#core stock business logic centralized for reusability, is responsible for understanding the actual stock operation.
 from django.db import transaction
 from django.core.exceptions import ValidationError
 

@@ -7,11 +7,15 @@ from django.shortcuts import get_object_or_404, render
 from django.contrib.auth.decorators import login_required
 from django.views.decorators.csrf import ensure_csrf_cookie
 
+from django.db.models import Q
+
 from inventory.models import Drug
 from patients.models import Patient
 from .models import Sale, SaleItem
 from audit_logs.models import AuditLog
 from .services import complete_sale, cancel_sale
+
+from django.utils import timezone
 
 
 
@@ -21,16 +25,11 @@ from .services import complete_sale, cancel_sale
 def create_sale_page(request):
     patients = Patient.objects.all()
 
-    drugs = Drug.objects.filter(
-        quantity_in_stock__gt=0
-    )
-
     return render(
         request,
         "sales/create_sale.html",
         {
             "patients": patients,
-            "drugs": drugs,
             "payment_methods": Sale.PaymentMethod.choices,
         },
     )
@@ -137,18 +136,88 @@ def create_sale(request):
         )
 
 
+@login_required
+def search_products(request):
+    """
+    Search in-stock drugs by name, generic name, brand, or barcode.
+    The database performs the filtering.
+    """
+    query = request.GET.get("q", "").strip()
+
+    if not query:
+        return JsonResponse(
+            {"products": []}
+        )
+
+    # Find an exact barcode match first.
+    exact_barcode = Drug.objects.filter(
+        quantity_in_stock__gt=0,
+        barcode=query,
+    ).first()
+
+    if exact_barcode:
+        drugs = [exact_barcode]
+
+    else:
+        # Search by name, generic name, brand, or partial barcode, thats the use of Q
+        drugs = Drug.objects.filter(
+            quantity_in_stock__gt=0
+        ).filter(
+            Q(name__icontains=query)
+            | Q(generic_name__icontains=query)
+            | Q(brand__icontains=query)
+            | Q(barcode__icontains=query)
+        )[:20]
+
+    products = [
+        {
+            "id": drug.id,
+            "name": drug.name,
+            "price": str(drug.selling_price),
+            "stock": drug.quantity_in_stock,
+            "barcode": drug.barcode,
+        }
+        for drug in drugs
+    ]
+
+    return JsonResponse(
+        {"products": products}
+    )
+
 
 @login_required
 def sales_list(request):
+    """
+    Display sales and optionally filter them by invoice number or date.
+    """
+    invoice = request.GET.get("invoice", "").strip()
+    date_filter = request.GET.get("date", "").strip()
+
     sales = Sale.objects.select_related(
         "patient",
         "pharmacist",
     ).order_by("-sale_date")
 
+    if invoice:
+        sales = sales.filter(
+            invoice_number__icontains=invoice
+        )
+
+    if date_filter == "today":
+        today = timezone.localdate()
+
+        sales = sales.filter(
+            sale_date__date=today,
+            status=Sale.Status.COMPLETED,
+        )
+
     return render(
         request,
         "sales/sales_list.html",
-        {"sales": sales},
+        {
+            "sales": sales,
+            "invoice": invoice,
+        },
     )
 
 
@@ -219,8 +288,17 @@ def complete_sale_view(request, sale_id):
     try:
         complete_sale(sale, items)
 
+        sale.invoice_number = f"INV-{sale.sale_date:%Y%m%d}-{sale.id:06d}"
         sale.status = Sale.Status.COMPLETED
-        sale.save(update_fields=["status"])
+
+        sale.save(
+            update_fields=[
+                "invoice_number",
+                "status",
+            ]
+        )#after complete_sale(sale, items) succeeds, generate the invoice number and complete the sale.
+
+
 
         AuditLog.objects.create(
             user=request.user,
@@ -237,6 +315,7 @@ def complete_sale_view(request, sale_id):
             {
                 "message": "Sale completed successfully.",
                 "sale_id": sale.id,
+                "invoice_number": sale.invoice_number,
             }
         )
 

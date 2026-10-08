@@ -37,6 +37,7 @@ class PatientAdmin(admin.ModelAdmin):
     )
 
     readonly_fields = (
+        "patient_number",
         "created_at",
         "updated_at",
     )

@@ -1,0 +1,94 @@
+{% extends "base.html" %}
+
+{% block title %}Patients{% endblock %}
+
+{% block content %}
+
+    <h1>Patients</h1>
+
+    <p>
+        Search for an existing patient by patient number,
+        name, or phone number.
+    </p>
+
+    <form method="get">
+        <input
+            type="text"
+            name="q"
+            value="{{ query }}"
+            placeholder="Search patient..."
+        >
+
+        <button type="submit">
+            Search
+        </button>
+
+        {% if query %}
+            <a href="{% url 'patient_list' %}">
+                Clear
+            </a>
+        {% endif %}
+    </form>
+
+    <br>
+
+    <a href="{% url 'create_patient' %}">
+        Register New Patient
+    </a>
+
+
+    <br><br>
+
+    <table>
+        <thead>
+            <tr>
+                <th>Patient Number</th>
+                <th>Name</th>
+                <th>Gender</th>
+                <th>Date of Birth</th>
+                <th>Phone</th>
+                <th>Created By</th>
+            </tr>
+        </thead>
+
+        <tbody>
+            {% for patient in patients %}
+                <tr>
+                    <td>
+                        <a href="{% url 'patient_detail' patient.id %}">
+                            {{ patient.patient_number }}
+                        </a>
+                    </td>
+
+                    <td>
+                        {{ patient.first_name }}
+                        {{ patient.last_name }}
+                    </td>
+
+                    <td>
+                        {{ patient.gender }}
+                    </td>
+
+                    <td>
+                        {{ patient.date_of_birth }}
+                    </td>
+
+                    <td>
+                        {{ patient.phone|default:"-" }}
+                    </td>
+
+                    <td>
+                        {{ patient.created_by.username }}
+                    </td>
+                </tr>
+            {% empty %}
+                <tr>
+                    <td colspan="6">
+                        No patients found.
+                    </td>
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+{% endblock %}

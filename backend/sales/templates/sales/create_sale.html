@@ -3,6 +3,87 @@
 <html>
 <head>
     <title>Create Sale</title>
+    <style>
+    body {
+        font-family: Arial, sans-serif;
+        margin: 30px;
+    }
+
+    h1,
+    h2,
+    h3 {
+        margin-bottom: 15px;
+    }
+
+    #sale-form > select,
+    .product-search-input,
+    .quantity {
+        padding: 8px;
+        margin-bottom: 10px;
+    }
+
+    #patient,
+    #payment_method {
+        width: 250px;
+    }
+
+    .sale-item {
+        margin-bottom: 20px;
+        padding: 15px;
+        border: 1px solid #ddd;
+    }
+
+    .product-search {
+        margin-bottom: 10px;
+    }
+
+    .product-search-input {
+        width: 350px;
+    }
+
+    .search-results {
+        width: 350px;
+        border: 1px solid #ccc;
+        margin-top: -10px;
+        margin-bottom: 10px;
+    }
+
+    .search-result {
+        padding: 8px;
+        cursor: pointer;
+        border-bottom: 1px solid #eee;
+    }
+
+    .search-result:hover {
+        background-color: #f2f2f2;
+    }
+
+    .selected-drug,
+    .drug-price,
+    .drug-stock {
+        display: inline-block;
+        margin-right: 15px;
+    }
+
+    .quantity {
+        width: 100px;
+        display: block;
+    }
+
+    button {
+        padding: 8px 14px;
+        margin-right: 8px;
+        cursor: pointer;
+    }
+
+    #total {
+        font-weight: bold;
+    }
+
+    #message {
+        margin-top: 15px;
+    }
+</style>
 </head>
 <body>
 
@@ -40,20 +121,36 @@
 <div id="sale-items">
 
     <div class="sale-item">
-        <select class="drug" required>
-            <option value="">Select Drug</option>
 
-            {% for drug in drugs %}
-                <option
-                    value="{{ drug.id }}"
-                    data-price="{{ drug.selling_price }}"
-                    data-stock="{{ drug.quantity_in_stock }}"
-                >
-                    {{ drug.name }} - Ksh {{ drug.selling_price }}
-                    (Stock: {{ drug.quantity_in_stock }})
-                </option>
-            {% endfor %}
-        </select>
+        <div class="product-search">
+
+            <input
+                type="text"
+                class="product-search-input"
+                placeholder="Search drug name, generic name, brand, or barcode"
+                autocomplete="off"
+            >
+
+            <div class="search-results"></div>
+
+            <input
+                type="hidden"
+                class="drug"
+            >
+
+            <span class="selected-drug">
+                No drug selected
+            </span>
+
+            <span class="drug-price">
+                Ksh 0.00
+            </span>
+
+            <span class="drug-stock">
+                Stock: 0
+            </span>
+
+        </div>
 
         <input
             type="number"
@@ -66,6 +163,7 @@
         <button type="button" class="remove-item">
             Remove
         </button>
+
     </div>
 
 </div>
@@ -89,148 +187,426 @@
 <p id="message"></p>
 
 <script>
-    const saleItemsContainer = document.getElementById("sale-items");
-    const addItemButton = document.getElementById("add-item");
-    const totalDisplay = document.getElementById("total");
+    const saleItemsContainer =
+        document.getElementById("sale-items");
+
+    const addItemButton =
+        document.getElementById("add-item");
+
+    const totalDisplay =
+        document.getElementById("total");
+
 
     function updateTotal() {
+        /*
+         * Recalculate the sale total using the prices
+         * of the products currently selected in the cart.
+         */
         let total = 0;
 
-        const saleItems = document.querySelectorAll(".sale-item");
+        const saleItems =
+            document.querySelectorAll(".sale-item");
 
         saleItems.forEach(function(item) {
-            const drugSelect = item.querySelector(".drug");
-            const quantityInput = item.querySelector(".quantity");
 
-            const selectedOption =
-                drugSelect.options[drugSelect.selectedIndex];
+            const drugInput =
+                item.querySelector(".drug");
 
-            const price = parseFloat(
-                selectedOption.dataset.price || 0
-            );
+            const priceDisplay =
+                item.querySelector(".drug-price");
 
-            const quantity = parseInt(
-                quantityInput.value || 0
-            );
+            const quantityInput =
+                item.querySelector(".quantity");
+
+            if (!drugInput.value) {
+                return;
+            }
+
+            const price =
+                parseFloat(
+                    priceDisplay.textContent
+                        .replace("Ksh", "")
+                        .trim()
+                ) || 0;
+
+            const quantity =
+                parseInt(
+                    quantityInput.value || 0
+                );
 
             total += price * quantity;
         });
 
-        totalDisplay.textContent = total.toFixed(2);
+        totalDisplay.textContent =
+            total.toFixed(2);
     }
 
-    function attachItemEvents(item) {
-        const drugSelect = item.querySelector(".drug");
-        const quantityInput = item.querySelector(".quantity");
-        const removeButton = item.querySelector(".remove-item");
 
-        drugSelect.addEventListener("change", updateTotal);
-        quantityInput.addEventListener("input", updateTotal);
+    async function searchProducts(input, resultsContainer) {
+        /*
+         * Search the database for matching products
+         * and display the results for the current cart item.
+         */
+        const query =
+            input.value.trim();
 
-        removeButton.addEventListener("click", function() {
-            const items = document.querySelectorAll(".sale-item");
+        resultsContainer.innerHTML = "";
 
-            if (items.length === 1) {
-                alert("A sale must contain at least one item.");
-                return;
-            }
+        if (!query) {
+            return;
+        }
 
-            item.remove();
+        const response =
+            await fetch(
+                "/sales/api/products/search/?q=" +
+                encodeURIComponent(query)
+            );
+
+        const data =
+            await response.json();
+
+                if (data.products.length === 1 &&
+            data.products[0].barcode === query) {
+
+            const product = data.products[0];
+
+            const saleItem =
+                input.closest(".sale-item");
+
+            saleItem.querySelector(
+                ".drug"
+            ).value = product.id;
+
+            saleItem.querySelector(
+                ".selected-drug"
+            ).textContent =
+                product.name;
+
+            saleItem.querySelector(
+                ".drug-price"
+            ).textContent =
+                "Ksh " + product.price;
+
+            saleItem.querySelector(
+                ".drug-stock"
+            ).textContent =
+                "Stock: " + product.stock;
+
+            input.value = "";
+
+            resultsContainer.innerHTML = "";
+
             updateTotal();
+
+            return;
+        }
+
+        data.products.forEach(function(product) {
+
+
+
+            const result =
+                document.createElement("div");
+
+            result.textContent =
+                product.name +
+                " - Ksh " +
+                product.price +
+                " (Stock: " +
+                product.stock +
+                ")";
+
+            result.className =
+                "search-result";
+
+
+            result.addEventListener(
+                "click",
+                function() {
+
+                    const saleItem =
+                        input.closest(".sale-item");
+
+                    saleItem.querySelector(
+                        ".drug"
+                    ).value = product.id;
+
+                    saleItem.querySelector(
+                        ".selected-drug"
+                    ).textContent =
+                        product.name;
+
+                    saleItem.querySelector(
+                        ".drug-price"
+                    ).textContent =
+                        "Ksh " + product.price;
+
+                    saleItem.querySelector(
+                        ".drug-stock"
+                    ).textContent =
+                        "Stock: " + product.stock;
+
+                    input.value = "";
+
+                    resultsContainer.innerHTML = "";
+
+                    updateTotal();
+                }
+            );
+
+            resultsContainer.appendChild(result);
         });
     }
+
+
+    function attachItemEvents(item) {
+        /*
+         * Attach search, quantity, and remove events
+         * to one sale item in the cart.
+         */
+        const searchInput =
+            item.querySelector(
+                ".product-search-input"
+            );
+
+        const searchResults =
+            item.querySelector(
+                ".search-results"
+            );
+
+        const quantityInput =
+            item.querySelector(".quantity");
+
+        const removeButton =
+            item.querySelector(".remove-item");
+
+
+        searchInput.addEventListener(
+            "input",
+            function() {
+
+                searchProducts(
+                    searchInput,
+                    searchResults
+                );
+            }
+        );
+
+
+        quantityInput.addEventListener(
+            "input",
+            updateTotal
+        );
+
+
+        removeButton.addEventListener(
+            "click",
+            function() {
+
+                const items =
+                    document.querySelectorAll(
+                        ".sale-item"
+                    );
+
+                if (items.length === 1) {
+
+                    alert(
+                        "A sale must contain at least one item."
+                    );
+
+                    return;
+                }
+
+                item.remove();
+
+                updateTotal();
+            }
+        );
+    }
+
 
     attachItemEvents(
         document.querySelector(".sale-item")
     );
 
-    addItemButton.addEventListener("click", function() {
-        const firstItem =
-            document.querySelector(".sale-item");
 
-        const newItem = firstItem.cloneNode(true);
+    addItemButton.addEventListener(
+        "click",
+        function() {
 
-        newItem.querySelector(".drug").value = "";
-        newItem.querySelector(".quantity").value = "";
+            const firstItem =
+                document.querySelector(
+                    ".sale-item"
+                );
 
-        saleItemsContainer.appendChild(newItem);
+            const newItem =
+                firstItem.cloneNode(true);
 
-        attachItemEvents(newItem);
-    });
 
-    document.getElementById("sale-form").addEventListener(
+            newItem.querySelector(
+                ".product-search-input"
+            ).value = "";
+
+            newItem.querySelector(
+                ".search-results"
+            ).innerHTML = "";
+
+            newItem.querySelector(
+                ".drug"
+            ).value = "";
+
+            newItem.querySelector(
+                ".selected-drug"
+            ).textContent =
+                "No drug selected";
+
+            newItem.querySelector(
+                ".drug-price"
+            ).textContent =
+                "Ksh 0.00";
+
+            newItem.querySelector(
+                ".drug-stock"
+            ).textContent =
+                "Stock: 0";
+
+            newItem.querySelector(
+                ".quantity"
+            ).value = "";
+
+
+            saleItemsContainer.appendChild(
+                newItem
+            );
+
+            attachItemEvents(newItem);
+
+            updateTotal();
+        }
+    );
+
+
+    document.getElementById(
+        "sale-form"
+    ).addEventListener(
         "submit",
         async function(event) {
+
             event.preventDefault();
 
+
             const patient =
-                document.getElementById("patient").value;
+                document.getElementById(
+                    "patient"
+                ).value;
+
 
             const paymentMethod =
-                document.getElementById("payment_method").value;
+                document.getElementById(
+                    "payment_method"
+                ).value;
+
 
             const saleItems =
-                document.querySelectorAll(".sale-item");
+                document.querySelectorAll(
+                    ".sale-item"
+                );
+
 
             const items = [];
 
-            saleItems.forEach(function(item) {
-                const drug =
-                    item.querySelector(".drug").value;
 
-                const quantity =
-                    item.querySelector(".quantity").value;
+            saleItems.forEach(
+                function(item) {
 
-                if (drug && quantity) {
-                    items.push({
-                        drug_id: drug,
-                        quantity: quantity
-                    });
+                    const drug =
+                        item.querySelector(
+                            ".drug"
+                        ).value;
+
+
+                    const quantity =
+                        item.querySelector(
+                            ".quantity"
+                        ).value;
+
+
+                    if (drug && quantity) {
+
+                        items.push({
+                            drug_id: drug,
+                            quantity: quantity
+                        });
+                    }
                 }
-            });
+            );
+
 
             if (items.length === 0) {
-                document.getElementById("message").textContent =
+
+                document.getElementById(
+                    "message"
+                ).textContent =
                     "Please add at least one sale item.";
 
                 return;
             }
+
 
             const csrfToken =
                 document.querySelector(
                     "[name=csrfmiddlewaretoken]"
                 ).value;
 
-            const response = await fetch(
-                "/sales/api/create/",
-                {
-                    method: "POST",
-                    headers: {
-                        "Content-Type": "application/json",
-                        "X-CSRFToken": csrfToken
-                    },
-                    body: JSON.stringify({
-                        patient: patient,
-                        payment_method: paymentMethod,
-                        items: items
-                    })
-                }
-            );
 
-            const data = await response.json();
+            const response =
+                await fetch(
+                    "/sales/api/create/",
+                    {
+                        method: "POST",
+
+                        headers: {
+                            "Content-Type":
+                                "application/json",
+
+                            "X-CSRFToken":
+                                csrfToken
+                        },
+
+                        body: JSON.stringify({
+                            patient: patient,
+
+                            payment_method:
+                                paymentMethod,
+
+                            items: items
+                        })
+                    }
+                );
+
+
+            const data =
+                await response.json();
+
 
             const message =
-                document.getElementById("message");
+                document.getElementById(
+                    "message"
+                );
+
 
             if (response.ok) {
-                    window.location.href =
-                        "/sales/" + data.sale_id + "/";
-                }
-            
-            
-            else {
+
+                window.location.href =
+                    "/sales/" +
+                    data.sale_id +
+                    "/";
+
+            } else {
+
                 message.textContent =
-                    "Error: " + data.error;
+                    "Error: " +
+                    data.error;
             }
         }
     );

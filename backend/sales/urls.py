@@ -7,6 +7,7 @@ urlpatterns = [
     path("", views.sales_list, name="sales_list"),
     path("create/", views.create_sale_page, name="create_sale_page"),
     path("api/create/", views.create_sale, name="create_sale"),
+    path( "api/products/search/", views.search_products, name="search_products", ),
     path("<int:sale_id>/", views.sale_detail, name="sale_detail"),
     path("<int:sale_id>/complete/", views.complete_sale_view,  name="complete_sale",),
     path("<int:sale_id>/cancel/", views.cancel_sale_view, name="cancel_sale",),

@@ -1,0 +1,116 @@
+{% extends "base.html" %}
+
+{% block title %}Patient {{ patient.patient_number }}{% endblock %}
+
+{% block content %}
+
+    <h1>Patient Details</h1>
+
+    <h2>
+        {{ patient.first_name }} {{ patient.last_name }}
+    </h2>
+
+    <p>
+        <strong>Patient Number:</strong>
+        {{ patient.patient_number }}
+    </p>
+
+    <p>
+        <strong>Gender:</strong>
+        {{ patient.gender }}
+    </p>
+
+    <p>
+        <strong>Date of Birth:</strong>
+        {{ patient.date_of_birth }}
+    </p>
+
+    <p>
+        <strong>Phone:</strong>
+        {{ patient.phone|default:"-" }}
+    </p>
+
+    <p>
+        <strong>Email:</strong>
+        {{ patient.email|default:"-" }}
+    </p>
+
+    <p>
+        <strong>Address:</strong>
+        {{ patient.address|default:"-" }}
+    </p>
+
+    <p>
+        <strong>Registered By:</strong>
+        {{ patient.created_by.username }}
+    </p>
+
+    <p>
+        <strong>Registered:</strong>
+        {{ patient.created_at }}
+    </p>
+
+    <hr>
+
+    <h2>Sales History</h2>
+
+    <table>
+        <thead>
+            <tr>
+                <th>Invoice</th>
+                <th>Date</th>
+                <th>Pharmacist</th>
+                <th>Items</th>
+                <th>Total</th>
+                <th>Status</th>
+            </tr>
+        </thead>
+
+        <tbody>
+            {% for sale in sales %}
+                <tr>
+                    <td>
+                        <a href="{% url 'sale_detail' sale.id %}">
+                            {{ sale.invoice_number|default:"-" }}
+                        </a>
+                    </td>
+
+                    <td>
+                        {{ sale.sale_date }}
+                    </td>
+
+                    <td>
+                        {{ sale.pharmacist.username }}
+                    </td>
+
+                    <td>
+                        {% for item in sale.items.all %}
+                            {{ item.drug.name }} × {{ item.quantity }}{% if not forloop.last %}, {% endif %}
+                        {% endfor %}
+                    </td>
+
+                    <td>
+                        Ksh {{ sale.total_amount }}
+                    </td>
+
+                    <td>
+                        {{ sale.status }}
+                    </td>
+                </tr>
+            {% empty %}
+                <tr>
+                    <td colspan="6">
+                        No sales history found.
+                    </td>
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    <p>
+        <a href="{% url 'patient_list' %}">
+            Back to Patients
+        </a>
+    </p>
+
+{% endblock %}

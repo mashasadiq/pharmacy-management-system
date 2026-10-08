@@ -35,6 +35,13 @@ class Sale(models.Model):
 
     sale_date = models.DateTimeField(auto_now_add=True)
 
+    invoice_number = models.CharField(
+    max_length=30,
+    unique=True,
+    null=True,
+    blank=True,
+    )#null=True, blank=True coz there existed sales before adding invoice functionality
+
     total_amount = models.DecimalField(
         max_digits=10,
         decimal_places=2,

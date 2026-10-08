@@ -2,7 +2,86 @@
 <html>
 <head>
     <title>Sale #{{ sale.id }}</title>
+
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 30px;
+        }
+
+        .receipt {
+            max-width: 700px;
+            margin: 30px auto;
+            padding: 25px;
+            border: 1px solid #ddd;
+        }
+
+        .receipt h1,
+        .receipt h2,
+        .receipt h3 {
+            margin-bottom: 10px;
+        }
+
+        .receipt table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 15px;
+        }
+
+        .receipt th,
+        .receipt td {
+            padding: 8px;
+            text-align: left;
+        }
+
+        .receipt th {
+            border-bottom: 2px solid #333;
+        }
+
+        .receipt td {
+            border-bottom: 1px solid #ddd;
+        }
+
+        .receipt-total {
+            text-align: right;
+            margin-top: 20px;
+        }
+
+        .print-button {
+            margin-top: 20px;
+            padding: 10px 16px;
+            cursor: pointer;
+        }
+
+        @media print {
+
+            body * {
+                visibility: hidden;
+            }
+
+            .receipt,
+            .receipt * {
+                visibility: visible;
+            }
+
+            .receipt {
+                position: absolute;
+                left: 0;
+                top: 0;
+                width: 100%;
+                max-width: none;
+                margin: 0;
+                padding: 0;
+                border: none;
+            }
+
+            .print-button {
+                display: none;
+            }
+        }
+    </style>
 </head>
+
 <body>
 
     <h1>Sale #{{ sale.id }}</h1>
@@ -142,28 +221,113 @@
         {% endif %}
 
 
-    {% else %}
 
-    <h2>Items</h2>
 
-    {% for item in items %}
+
+{% else %}
+
+    <div class="receipt">
+
+        <h1>Masha Pharmacy</h1>
 
         <p>
-            {{ item.drug.name }}
-            — Quantity: {{ item.quantity }}
-            — Unit Price: Ksh {{ item.unit_price }}
-            — Subtotal: Ksh {{ item.subtotal }}
+            <strong>Pharmacy Management System</strong>
         </p>
 
-    {% empty %}
+        <hr>
 
-        <p>No items found.</p>
+        <h2>RECEIPT</h2>
 
-    {% endfor %}
+        <p>
+            <strong>Invoice No:</strong>
+            {{ sale.invoice_number }}
+        </p>
 
-    <h2>
-        Total: Ksh {{ sale.total_amount }}
-    </h2>
+        <p>
+            <strong>Date:</strong>
+            {{ sale.sale_date }}
+        </p>
+
+        <p>
+            <strong>Patient:</strong>
+            {{ sale.patient }}
+        </p>
+
+        <p>
+            <strong>Served by:</strong>
+            {{ sale.pharmacist }}
+        </p>
+
+        <p>
+            <strong>Payment:</strong>
+            {{ sale.payment_method }}
+        </p>
+
+        <hr>
+
+        <h3>Items</h3>
+
+        <table border="1" cellpadding="8">
+
+            <thead>
+                <tr>
+                    <th>Item</th>
+                    <th>Qty</th>
+                    <th>Price</th>
+                    <th>Total</th>
+                </tr>
+            </thead>
+
+            <tbody>
+
+                {% for item in items %}
+
+                    <tr>
+                        <td>
+                            {{ item.drug.name }}
+                        </td>
+
+                        <td>
+                            {{ item.quantity }}
+                        </td>
+
+                        <td>
+                            Ksh {{ item.unit_price }}
+                        </td>
+
+                        <td>
+                            Ksh {{ item.subtotal }}
+                        </td>
+                    </tr>
+
+                {% empty %}
+
+                    <tr>
+                        <td colspan="4">
+                            No items found.
+                        </td>
+                    </tr>
+
+                {% endfor %}
+
+            </tbody>
+
+        </table>
+
+        <hr>
+
+        <h2 class="receipt-total">
+            TOTAL: Ksh {{ sale.total_amount }}
+        </h2>
+
+        <button
+            class="print-button"
+            onclick="window.print()"
+        >
+            Print Receipt
+        </button>
+
+    </div>
 
     {% if sale.status == "Completed" and user.role == "ADMIN" %}
 
@@ -171,16 +335,21 @@
             method="post"
             action="{% url 'cancel_sale' sale.id %}"
         >
+
             {% csrf_token %}
 
             <button type="submit">
                 Cancel Sale
             </button>
+
         </form>
 
     {% endif %}
 
 {% endif %}
+
+
+
 
     <p>
         <a href="{% url 'sales_list' %}">

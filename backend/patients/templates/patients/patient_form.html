@@ -1,0 +1,25 @@
+{% extends "base.html" %}
+
+{% block title %}Register Patient{% endblock %}
+
+{% block content %}
+
+    <h1>Register New Patient</h1>
+
+    <form method="post">
+
+        {% csrf_token %}
+
+        {{ form.as_p }}
+
+        <button type="submit">
+            Register Patient
+        </button>
+
+        <a href="{% url 'patient_list' %}">
+            Cancel
+        </a>
+
+    </form>
+
+{% endblock %}

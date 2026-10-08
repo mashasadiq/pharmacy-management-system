@@ -9,4 +9,5 @@ urlpatterns = [
     path("low-stock/", views.low_stock_drugs, name="low_stock"),
     path("expired/", views.expired_drugs, name="expired_drugs"),
     path("check-stock/<int:drug_id>/", views.check_stock_availability, name="check_stock"),
+    path("create/", views.create_drug, name="create_drug"),
 ]

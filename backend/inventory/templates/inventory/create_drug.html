@@ -1,0 +1,11 @@
+<h1>Add New Drug</h1>
+
+<form method="post">
+    {% csrf_token %}
+
+    {{ form.as_p }}
+
+    <button type="submit">Save Drug</button>
+</form>
+
+<a href="{% url 'inventory_list' %}">Cancel</a>
