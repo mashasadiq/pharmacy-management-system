@@ -64,13 +64,13 @@
         required
     >
 
-    <h2>Invoice Number</h2>
+    
+    <h2>Supplier Invoice Number (Optional)</h2>
 
     <input
         type="text"
         id="invoice_number"
-        placeholder="Invoice number"
-        required
+        placeholder="Enter supplier invoice number if available"
     >
 
     <h2>Remarks</h2>
@@ -82,7 +82,7 @@
 
     <br><br>
 
-    <button type="submit">
+    <button type="submit" id="record-purchase-btn">
         Record Purchase
     </button>
 
@@ -91,42 +91,40 @@
 <p id="message"></p>
 
 
+
 <script>
+    // Submit a purchase once and display the API result.
     document.getElementById("purchase-form").addEventListener(
         "submit",
         async function(event) {
-
             event.preventDefault();
 
-            const drug =
-                document.getElementById("drug").value;
+            const form = event.currentTarget;
+            const button = document.getElementById("record-purchase-btn");
+            const message = document.getElementById("message");
 
-            const supplier =
-                document.getElementById("supplier").value;
+            // Prevent repeated submissions while the request is running.
+            if (button.disabled) {
+                return;
+            }
 
-            const quantity =
-                document.getElementById("quantity").value;
+            const drug = document.getElementById("drug").value;
+            const supplier = document.getElementById("supplier").value;
+            const quantity = document.getElementById("quantity").value;
+            const costPrice = document.getElementById("cost_price").value;
+            const purchaseDate = document.getElementById("purchase_date").value;
+            const invoiceNumber = document.getElementById("invoice_number").value;
+            const remarks = document.getElementById("remarks").value;
+            const csrfToken = document.querySelector(
+                "[name=csrfmiddlewaretoken]"
+            ).value;
 
-            const costPrice =
-                document.getElementById("cost_price").value;
+            button.disabled = true;
+            button.textContent = "Recording Purchase...";
+            message.textContent = "Please wait while the purchase is recorded.";
 
-            const purchaseDate =
-                document.getElementById("purchase_date").value;
-
-            const invoiceNumber =
-                document.getElementById("invoice_number").value;
-
-            const remarks =
-                document.getElementById("remarks").value;
-
-            const csrfToken =
-                document.querySelector(
-                    "[name=csrfmiddlewaretoken]"
-                ).value;
-
-            const response = await fetch(
-                "/purchases/api/create/",
-                {
+            try {
+                const response = await fetch("/purchases/api/create/", {
                     method: "POST",
                     headers: {
                         "Content-Type": "application/json",
@@ -141,23 +139,37 @@
                         invoice_number: invoiceNumber,
                         remarks: remarks
                     })
+                });
+
+                const data = await response.json();
+
+                if (!response.ok) {
+                    message.textContent =
+                        "Purchase failed: " + (data.error || "Please try again.");
+                    return;
                 }
-            );
 
-            const data = await response.json();
-
-            const message =
-                document.getElementById("message");
-
-            if (response.ok) {
+                                
+                                
                 message.textContent =
-                    "Purchase recorded successfully. " +
-                    "Purchase #" + data.purchase_id +
-                    " created. New stock: " +
-                    data.new_stock;
-            } else {
+                    data.message +
+                    " | Purchase reference: " + data.purchase_reference +
+                    " | Supplier invoice: " +
+                        (data.supplier_invoice_number || "Not provided") +
+                    " | Drug: " + data.drug +
+                    " | Quantity received: " + data.quantity +
+                    " | Updated stock: " + data.new_stock;
+                    
+                // Clear the form only after the server confirms success.
+                form.reset();
+
+            } catch (error) {
                 message.textContent =
-                    "Error: " + data.error;
+                    "Unable to confirm the purchase. Check the purchase list " +
+                    "before retrying to avoid recording it twice.";
+            } finally {
+                button.disabled = false;
+                button.textContent = "Record Purchase";
             }
         }
     );

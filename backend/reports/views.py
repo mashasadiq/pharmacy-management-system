@@ -1,8 +1,11 @@
 from django.shortcuts import render
+from django.contrib.auth.decorators import login_required
 
 from .services import ReportService
 
+from accounts.decorators import admin_required
 
+@login_required
 def reports_home(request):
     """Display links to all available pharmacy reports."""
     return render(
@@ -10,7 +13,7 @@ def reports_home(request):
         "reports/reports_home.html",
     )
 
-
+@login_required
 def inventory_report(request):
     """Display the current pharmacy inventory report."""
     drugs = ReportService.inventory_report()
@@ -21,7 +24,7 @@ def inventory_report(request):
         {"drugs": drugs},
     )
 
-
+@login_required
 def low_stock_report(request):
     """Display drugs whose stock is at or below the minimum level."""
     drugs = ReportService.low_stock_report()
@@ -32,7 +35,7 @@ def low_stock_report(request):
         {"drugs": drugs},
     )
 
-
+@login_required
 def expired_drugs_report(request):
     """Display drugs that have already expired."""
     drugs = ReportService.expired_drugs_report()
@@ -43,7 +46,7 @@ def expired_drugs_report(request):
         {"drugs": drugs},
     )
 
-
+@admin_required
 def patient_report(request):
     """Display all registered patients."""
     patients = ReportService.patient_report()
@@ -54,7 +57,7 @@ def patient_report(request):
         {"patients": patients},
     )
 
-
+@admin_required
 def purchase_report(request):
     """Display purchase records and purchase summary."""
     purchases, total_units, total_cost = ReportService.purchase_report()
@@ -69,7 +72,7 @@ def purchase_report(request):
         },
     )
 
-
+@admin_required
 def daily_sales_report(request):
     """Display completed sales and revenue for a selected date."""
     report_date = request.GET.get("date")
@@ -93,7 +96,7 @@ def daily_sales_report(request):
     )
 
 
-
+@admin_required
 def monthly_sales_report(request):
     """Display completed sales and revenue for a selected month."""
     year = request.GET.get("year")

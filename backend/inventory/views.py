@@ -1,11 +1,16 @@
+from django.contrib.auth.decorators import login_required
+
 from django.shortcuts import get_object_or_404, render, redirect
 from django.db.models import F, Q
 from django.utils import timezone
+
+from accounts.decorators import admin_required
 
 from .models import Drug
 from .forms import DrugForm
 
 
+@login_required
 def inventory_list(request):
     """
     Display all drugs in the inventory.
@@ -34,6 +39,7 @@ def inventory_list(request):
         },
     )
 
+@login_required
 def drug_detail(request, drug_id):
     """
     Display details of one drug.
@@ -47,7 +53,7 @@ def drug_detail(request, drug_id):
         {"drug": drug},
     )
 
-
+@login_required
 def low_stock_drugs(request):
     """
     Display drugs whose stock is at or below
@@ -64,7 +70,7 @@ def low_stock_drugs(request):
         {"drugs": drugs},
     )
 
-
+@login_required
 def expired_drugs(request):
     """
     Display drugs that have already expired.
@@ -80,15 +86,30 @@ def expired_drugs(request):
         {"drugs": drugs},
     )
 
+
+@login_required
 def check_stock_availability(request, drug_id):
-    """
-    Check whether a drug has enough stock
-    for the requested quantity.
-    """
-
+    """Check stock availability for a valid positive quantity."""
     drug = get_object_or_404(Drug, id=drug_id)
+    quantity_input = request.GET.get("quantity", "").strip()
 
-    requested_quantity = int(request.GET.get("quantity", 0))
+    # Reject missing, non-numeric, zero, and negative quantities.
+    try:
+        requested_quantity = int(quantity_input)
+        if requested_quantity <= 0:
+            raise ValueError
+    except ValueError:
+        return render(
+            request,
+            "inventory/stock_availability.html",
+            {
+                "drug": drug,
+                "requested_quantity": quantity_input,
+                "current_stock": drug.quantity_in_stock,
+                "available": False,
+                "error": "Enter a valid quantity greater than zero.",
+            },
+        )
 
     available = requested_quantity <= drug.quantity_in_stock
 
@@ -100,10 +121,11 @@ def check_stock_availability(request, drug_id):
             "requested_quantity": requested_quantity,
             "current_stock": drug.quantity_in_stock,
             "available": available,
+            "error": "",
         },
     )
 
-
+@admin_required
 def create_drug(request):
     """Display and process the form for registering a new drug."""
 

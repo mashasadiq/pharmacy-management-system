@@ -14,7 +14,9 @@ from .models import Purchase
 
 from .services import create_purchase as create_purchase_service
 
-@login_required
+from accounts.decorators import admin_required
+
+@admin_required
 def create_purchase_page(request):
     """
     Display the page used to record a new purchase.
@@ -32,7 +34,7 @@ def create_purchase_page(request):
     )
 
 
-@login_required
+@admin_required
 @transaction.atomic
 def create_purchase(request):
     """
@@ -69,14 +71,17 @@ def create_purchase(request):
             quantity=quantity,
             cost_price=cost_price,
             purchase_date=data["purchase_date"],
-            invoice_number=data["invoice_number"],
+            invoice_number=(data.get("invoice_number") or "").strip(),
             remarks=data.get("remarks", ""),
         )
 
+        
         return JsonResponse(
             {
                 "message": "Purchase recorded successfully.",
                 "purchase_id": purchase.id,
+                "purchase_reference": purchase.purchase_reference,
+                "supplier_invoice_number": purchase.invoice_number,
                 "drug": drug.name,
                 "quantity": quantity,
                 "new_stock": drug.quantity_in_stock,
@@ -100,7 +105,7 @@ def create_purchase(request):
             status=500,
         )
 
-@login_required
+@admin_required
 def purchase_list(request):
     """Display all recorded purchases as historical records."""
     purchases = Purchase.objects.select_related(
@@ -115,7 +120,7 @@ def purchase_list(request):
         {"purchases": purchases},
     )
 
-@login_required
+@admin_required
 def purchase_detail(request, purchase_id):
     """Display the complete details of one recorded purchase."""
     purchase = get_object_or_404(

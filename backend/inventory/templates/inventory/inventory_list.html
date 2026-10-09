@@ -1,5 +1,8 @@
 <h1>Pharmacy Inventory</h1>
-<a href="{% url 'create_drug' %}">Add New Drug</a>
+
+{% if request.user.role == "ADMIN" %}
+    <a href="{% url 'create_drug' %}">Add New Drug</a>
+{% endif %}
 
 <form method="get">
     <input

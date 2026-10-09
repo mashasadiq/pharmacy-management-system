@@ -1,22 +1,26 @@
+from django.db import transaction
+
 from notifications.models import Notification
 from accounts.models import User
 
 
+@transaction.atomic
 def check_low_stock(drug):
     """
-    Check whether a drug has reached its minimum stock level.
-
-    If the drug is at or below its minimum stock level,
-    create an unread notification for each active admin
-    and pharmacist, unless one already exists.
+    Create low-stock alerts or resolve unread alerts when stock recovers.
     """
-    if drug.quantity_in_stock > drug.minimum_stock:
-        return
-
     users = User.objects.filter(
         is_active=True,
         role__in=["ADMIN", "PHARMACIST"],
     )
+
+    if drug.quantity_in_stock > drug.minimum_stock:
+        Notification.objects.filter(
+            drug=drug,
+            type=Notification.NotificationType.LOW_STOCK,
+            is_read=False,
+        ).update(is_read=True)
+        return
 
     for user in users:
         notification_exists = Notification.objects.filter(

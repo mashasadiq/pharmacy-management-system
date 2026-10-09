@@ -5,6 +5,8 @@ from inventory.models import Drug
 from .models import Purchase
 from audit_logs.models import AuditLog
 
+from notifications.services import check_low_stock
+
 
 @transaction.atomic
 def create_purchase(
@@ -44,8 +46,18 @@ def create_purchase(
         remarks=remarks,
     )
 
+    # Generate the internal reference using the saved purchase ID.
+    purchase.purchase_reference = (
+        f"PUR-{purchase.purchase_date.replace('-', '')}-{purchase.id:06d}"
+    )
+    
+    purchase.save(update_fields=["purchase_reference"])
+
     drug.quantity_in_stock += quantity
     drug.save(update_fields=["quantity_in_stock"])
+
+    # Refresh or resolve the drug's low-stock alert after replenishment.
+    check_low_stock(drug)
 
     AuditLog.objects.create(
         user=received_by,

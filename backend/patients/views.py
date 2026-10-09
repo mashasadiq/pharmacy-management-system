@@ -1,6 +1,6 @@
 from django.contrib.auth.decorators import login_required
 from django.db.models import Q
-from django.shortcuts import render
+from django.shortcuts import get_object_or_404, render
 
 from .models import Patient
 
@@ -63,8 +63,8 @@ def patient_list(request):
 @login_required
 def patient_detail(request, patient_id):
     """Display patient information together with their sales history."""
-    patient = Patient.objects.get(id=patient_id)
-
+    patient = get_object_or_404(Patient, id=patient_id)
+    
     sales = patient.sales.select_related(
         "pharmacist"
     ).prefetch_related(
