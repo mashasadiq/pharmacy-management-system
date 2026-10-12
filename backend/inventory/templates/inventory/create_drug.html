@@ -1,3 +1,9 @@
+{% extends "base.html" %}
+
+{% block title %}Add New Drug{% endblock %}
+
+{% block content %}
+
 <h1>Add New Drug</h1>
 
 <form method="post">
@@ -9,3 +15,5 @@
 </form>
 
 <a href="{% url 'inventory_list' %}">Cancel</a>
+
+{% endblock %}

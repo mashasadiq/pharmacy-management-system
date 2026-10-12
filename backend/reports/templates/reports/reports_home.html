@@ -1,27 +1,26 @@
+{% extends "base.html" %}
 
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Pharmacy Reports</title>
-</head>
-<body>
+{% block title %}Pharmacy Reports{% endblock %}
+
+{% block content %}
 
     <h1>Pharmacy Reports</h1>
 
     <h2>Inventory Reports</h2>
+
     <ul>
         <li>
             <a href="{% url 'inventory_report' %}">
                 Inventory Report
             </a>
         </li>
+
         <li>
             <a href="{% url 'low_stock_report' %}">
                 Low Stock Report
             </a>
         </li>
+
         <li>
             <a href="{% url 'expired_drugs_report' %}">
                 Expired Drugs Report
@@ -32,12 +31,14 @@
     {% if request.user.role == "ADMIN" %}
 
         <h2>Sales Reports</h2>
+
         <ul>
             <li>
                 <a href="{% url 'daily_sales_report' %}">
                     Daily Sales Report
                 </a>
             </li>
+
             <li>
                 <a href="{% url 'monthly_sales_report' %}">
                     Monthly Sales Report
@@ -46,12 +47,14 @@
         </ul>
 
         <h2>Management Reports</h2>
+
         <ul>
             <li>
                 <a href="{% url 'purchase_report' %}">
                     Purchase Report
                 </a>
             </li>
+
             <li>
                 <a href="{% url 'patient_report' %}">
                     Patient Report
@@ -61,9 +64,4 @@
 
     {% endif %}
 
-    <p>
-        <a href="{% url 'dashboard' %}">Return to Dashboard</a>
-    </p>
-
-</body>
-</html>
+{% endblock %}

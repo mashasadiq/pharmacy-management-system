@@ -1,15 +1,15 @@
-<!DOCTYPE html>
-<html>
-<head>
-    <title>Inventory Report</title>
-</head>
-<body>
+{% extends "base.html" %}
+
+{% block title %}Inventory Report{% endblock %}
+
+{% block content %}
 
     <h1>Inventory Report</h1>
 
     <p>Total drugs: {{ drugs|length }}</p>
 
     <table border="1">
+
         <thead>
             <tr>
                 <th>Drug</th>
@@ -23,23 +23,29 @@
         </thead>
 
         <tbody>
+
             {% for drug in drugs %}
-            <tr>
-                <td>{{ drug.name }}</td>
-                <td>{{ drug.generic_name }}</td>
-                <td>{{ drug.category }}</td>
-                <td>{{ drug.quantity_in_stock }}</td>
-                <td>{{ drug.minimum_stock }}</td>
-                <td>{{ drug.selling_price }}</td>
-                <td>{{ drug.expiry_date }}</td>
-            </tr>
+
+                <tr>
+                    <td>{{ drug.name }}</td>
+                    <td>{{ drug.generic_name }}</td>
+                    <td>{{ drug.category }}</td>
+                    <td>{{ drug.quantity_in_stock }}</td>
+                    <td>{{ drug.minimum_stock }}</td>
+                    <td>{{ drug.selling_price }}</td>
+                    <td>{{ drug.expiry_date }}</td>
+                </tr>
+
             {% empty %}
-            <tr>
-                <td colspan="7">No drugs found.</td>
-            </tr>
+
+                <tr>
+                    <td colspan="7">No drugs found.</td>
+                </tr>
+
             {% endfor %}
+
         </tbody>
+
     </table>
 
-</body>
-</html>
+{% endblock %}

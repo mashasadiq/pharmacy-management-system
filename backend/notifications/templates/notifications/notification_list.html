@@ -1,21 +1,26 @@
-<h1>Notifications</h1>
 
-{% if notifications %}
-    {% for notification in notifications %}
-        <div>
-            <h3>{{ notification.title }}</h3>
+{% extends "base.html" %}
 
-            <p>{{ notification.message }}</p>
+{% block title %}Notifications{% endblock %}
 
-            <p>
-                Type: {{ notification.get_type_display }}
-            </p>
+{% block content %}
+    <h1>Notifications</h1>
 
-            <p>
+    {% if notifications %}
+        {% for notification in notifications %}
+            <div>
+                <h3>{{ notification.title }}</h3>
+
+                <p>{{ notification.message }}</p>
+
+                <p>
+                    Type: {{ notification.get_type_display }}
+                </p>
+
                 {% if notification.is_read %}
-                    <p>Read</p>
+                    <p>Status: Read</p>
                 {% else %}
-                    <p>Unread</p>
+                    <p>Status: Unread</p>
 
                     <form
                         method="post"
@@ -25,13 +30,13 @@
                         <button type="submit">Mark as read</button>
                     </form>
                 {% endif %}
-            </p>
 
-            <small>{{ notification.created_at }}</small>
-        </div>
+                <small>{{ notification.created_at }}</small>
+            </div>
 
-        <hr>
-    {% endfor %}
-{% else %}
-    <p>No notifications yet.</p>
-{% endif %}
+            <hr>
+        {% endfor %}
+    {% else %}
+        <p>No notifications yet.</p>
+    {% endif %}
+{% endblock %}

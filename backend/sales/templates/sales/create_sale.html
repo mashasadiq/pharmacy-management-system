@@ -1,20 +1,10 @@
-<!DOCTYPE html>
+{% extends "base.html" %}
 
-<html>
-<head>
-    <title>Create Sale</title>
-    <style>
-    body {
-        font-family: Arial, sans-serif;
-        margin: 30px;
-    }
+{% block title %}Create Sale{% endblock %}
 
-    h1,
-    h2,
-    h3 {
-        margin-bottom: 15px;
-    }
+{% block extra_css %}
 
+<style>
     #sale-form > select,
     .product-search-input,
     .quantity {
@@ -39,10 +29,12 @@
 
     .product-search-input {
         width: 350px;
+        max-width: 100%;
     }
 
     .search-results {
         width: 350px;
+        max-width: 100%;
         border: 1px solid #ccc;
         margin-top: -10px;
         margin-bottom: 10px;
@@ -70,12 +62,6 @@
         display: block;
     }
 
-    button {
-        padding: 8px 14px;
-        margin-right: 8px;
-        cursor: pointer;
-    }
-
     #total {
         font-weight: bold;
     }
@@ -84,8 +70,10 @@
         margin-top: 15px;
     }
 </style>
-</head>
-<body>
+
+{% endblock %}
+
+{% block content %}
 
 <h1>Create Sale</h1>
 
@@ -119,7 +107,6 @@
 <h2>Sale Items</h2>
 
 <div id="sale-items">
-
     <div class="sale-item">
 
         <div class="product-search">
@@ -133,22 +120,13 @@
 
             <div class="search-results"></div>
 
-            <input
-                type="hidden"
-                class="drug"
-            >
+            <input type="hidden" class="drug">
 
-            <span class="selected-drug">
-                No drug selected
-            </span>
+            <span class="selected-drug">No drug selected</span>
 
-            <span class="drug-price">
-                Ksh 0.00
-            </span>
+            <span class="drug-price">Ksh 0.00</span>
 
-            <span class="drug-stock">
-                Stock: 0
-            </span>
+            <span class="drug-stock">Stock: 0</span>
 
         </div>
 
@@ -165,7 +143,6 @@
         </button>
 
     </div>
-
 </div>
 
 <br>
@@ -181,6 +158,7 @@
 <button type="submit">
     Create Sale
 </button>
+
 
 </form>
 
@@ -230,9 +208,7 @@
                 ) || 0;
 
             const quantity =
-                parseInt(
-                    quantityInput.value || 0
-                );
+                parseInt(quantityInput.value || 0);
 
             total += price * quantity;
         });
@@ -265,7 +241,7 @@
         const data =
             await response.json();
 
-                if (data.products.length === 1 &&
+        if (data.products.length === 1 &&
             data.products[0].barcode === query) {
 
             const product = data.products[0];
@@ -303,8 +279,6 @@
 
         data.products.forEach(function(product) {
 
-
-
             const result =
                 document.createElement("div");
 
@@ -318,7 +292,6 @@
 
             result.className =
                 "search-result";
-
 
             result.addEventListener(
                 "click",
@@ -365,14 +338,10 @@
          * to one sale item in the cart.
          */
         const searchInput =
-            item.querySelector(
-                ".product-search-input"
-            );
+            item.querySelector(".product-search-input");
 
         const searchResults =
-            item.querySelector(
-                ".search-results"
-            );
+            item.querySelector(".search-results");
 
         const quantityInput =
             item.querySelector(".quantity");
@@ -404,9 +373,7 @@
             function() {
 
                 const items =
-                    document.querySelectorAll(
-                        ".sale-item"
-                    );
+                    document.querySelectorAll(".sale-item");
 
                 if (items.length === 1) {
 
@@ -435,9 +402,7 @@
         function() {
 
             const firstItem =
-                document.querySelector(
-                    ".sale-item"
-                );
+                document.querySelector(".sale-item");
 
             const newItem =
                 firstItem.cloneNode(true);
@@ -475,9 +440,7 @@
             ).value = "";
 
 
-            saleItemsContainer.appendChild(
-                newItem
-            );
+            saleItemsContainer.appendChild(newItem);
 
             attachItemEvents(newItem);
 
@@ -486,9 +449,7 @@
     );
 
 
-    document.getElementById(
-        "sale-form"
-    ).addEventListener(
+    document.getElementById("sale-form").addEventListener(
         "submit",
         async function(event) {
 
@@ -496,57 +457,43 @@
 
 
             const patient =
-                document.getElementById(
-                    "patient"
-                ).value;
+                document.getElementById("patient").value;
 
 
             const paymentMethod =
-                document.getElementById(
-                    "payment_method"
-                ).value;
+                document.getElementById("payment_method").value;
 
 
             const saleItems =
-                document.querySelectorAll(
-                    ".sale-item"
-                );
+                document.querySelectorAll(".sale-item");
 
 
             const items = [];
 
 
-            saleItems.forEach(
-                function(item) {
+            saleItems.forEach(function(item) {
 
-                    const drug =
-                        item.querySelector(
-                            ".drug"
-                        ).value;
+                const drug =
+                    item.querySelector(".drug").value;
 
 
-                    const quantity =
-                        item.querySelector(
-                            ".quantity"
-                        ).value;
+                const quantity =
+                    item.querySelector(".quantity").value;
 
 
-                    if (drug && quantity) {
+                if (drug && quantity) {
 
-                        items.push({
-                            drug_id: drug,
-                            quantity: quantity
-                        });
-                    }
+                    items.push({
+                        drug_id: drug,
+                        quantity: quantity
+                    });
                 }
-            );
+            });
 
 
             if (items.length === 0) {
 
-                document.getElementById(
-                    "message"
-                ).textContent =
+                document.getElementById("message").textContent =
                     "Please add at least one sale item.";
 
                 return;
@@ -566,19 +513,13 @@
                         method: "POST",
 
                         headers: {
-                            "Content-Type":
-                                "application/json",
-
-                            "X-CSRFToken":
-                                csrfToken
+                            "Content-Type": "application/json",
+                            "X-CSRFToken": csrfToken
                         },
 
                         body: JSON.stringify({
                             patient: patient,
-
-                            payment_method:
-                                paymentMethod,
-
+                            payment_method: paymentMethod,
                             items: items
                         })
                     }
@@ -590,27 +531,21 @@
 
 
             const message =
-                document.getElementById(
-                    "message"
-                );
+                document.getElementById("message");
 
 
             if (response.ok) {
 
                 window.location.href =
-                    "/sales/" +
-                    data.sale_id +
-                    "/";
+                    "/sales/" + data.sale_id + "/";
 
             } else {
 
                 message.textContent =
-                    "Error: " +
-                    data.error;
+                    "Error: " + data.error;
             }
         }
     );
 </script>
 
-</body>
-</html>
+{% endblock %}

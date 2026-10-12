@@ -48,7 +48,7 @@ def create_purchase(
 
     # Generate the internal reference using the saved purchase ID.
     purchase.purchase_reference = (
-        f"PUR-{purchase.purchase_date.replace('-', '')}-{purchase.id:06d}"
+        f"PUR-{purchase.purchase_date.strftime('%Y%m%d')}-{purchase.id:06d}"
     )
     
     purchase.save(update_fields=["purchase_reference"])

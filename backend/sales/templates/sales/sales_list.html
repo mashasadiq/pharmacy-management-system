@@ -1,93 +1,95 @@
-<!DOCTYPE html>
-<html>
-<head>
-    <title>Sales</title>
+{% extends "base.html" %}
 
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            margin: 30px;
-        }
+{% block title %}Sales{% endblock %}
 
-        .search-form {
-            margin: 20px 0;
-        }
+{% block extra_css %}
 
-        .search-form input {
-            padding: 8px;
-            width: 300px;
-        }
+<style>
+    .search-form {
+        margin: 20px 0;
+    }
 
-        .search-form button {
-            padding: 8px 14px;
-            cursor: pointer;
-        }
+    .search-form input {
+        padding: 8px;
+        width: 300px;
+        max-width: 100%;
+    }
 
-        .clear-search {
-            margin-left: 8px;
-        }
+    .search-form button {
+        padding: 8px 14px;
+        cursor: pointer;
+    }
 
-        .sale {
-            margin-bottom: 12px;
-        }
-    </style>
-</head>
+    .clear-search {
+        margin-left: 8px;
+    }
 
-<body>
+    .sale {
+        margin-bottom: 12px;
+        padding: 12px;
+        border-bottom: 1px solid #ddd;
+    }
+</style>
 
-    <h1>Sales</h1>
+{% endblock %}
 
-    <a href="{% url 'create_sale_page' %}">
-        Create New Sale
+{% block content %}
+
+<h1>Sales</h1>
+
+<a href="{% url 'create_sale_page' %}">
+    Create New Sale
+</a>
+
+<form method="get" class="search-form">
+
+<input
+    type="text"
+    name="invoice"
+    value="{{ invoice }}"
+    placeholder="Search by invoice number"
+>
+
+<button type="submit">
+    Search
+</button>
+
+{% if invoice %}
+    <a href="{% url 'sales_list' %}" class="clear-search">
+        Clear
+    </a>
+{% endif %}
+
+
+</form>
+
+{% for sale in sales %}
+
+
+<div class="sale">
+
+    <a href="{% url 'sale_detail' sale.id %}">
+        Sale #{{ sale.id }}
     </a>
 
-    <form method="get" class="search-form">
+    {% if sale.invoice_number %}
+        | Invoice: {{ sale.invoice_number }}
+    {% endif %}
 
-        <input
-            type="text"
-            name="invoice"
-            value="{{ invoice }}"
-            placeholder="Search by invoice number"
-        >
+    | Patient: {{ sale.patient }}
+    | Pharmacist: {{ sale.pharmacist }}
+    | Amount: Ksh {{ sale.total_amount }}
+    | Payment: {{ sale.payment_method }}
+    | Status: {{ sale.status }}
+    | Date: {{ sale.sale_date }}
 
-        <button type="submit">
-            Search
-        </button>
+</div>
 
-        {% if invoice %}
-            <a href="{% url 'sales_list' %}" class="clear-search">
-                Clear
-            </a>
-        {% endif %}
+{% empty %}
 
-    </form>
+<p>No sales found.</p>
 
-    {% for sale in sales %}
 
-        <div class="sale">
+{% endfor %}
 
-            <a href="{% url 'sale_detail' sale.id %}">
-                Sale #{{ sale.id }}
-            </a>
-
-            {% if sale.invoice_number %}
-                | Invoice: {{ sale.invoice_number }}
-            {% endif %}
-
-            | Patient: {{ sale.patient }}
-            | Pharmacist: {{ sale.pharmacist }}
-            | Amount: Ksh {{ sale.total_amount }}
-            | Payment: {{ sale.payment_method }}
-            | Status: {{ sale.status }}
-            | Date: {{ sale.sale_date }}
-
-        </div>
-
-    {% empty %}
-
-        <p>No sales found.</p>
-
-    {% endfor %}
-
-</body>
-</html>
+{% endblock %}

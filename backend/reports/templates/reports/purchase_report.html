@@ -1,20 +1,16 @@
-<!DOCTYPE html>
-<html>
-<head>
-    <title>Purchase Report</title>
-</head>
-<body>
 
+{% extends "base.html" %}
+
+{% block title %}Purchase Report{% endblock %}
+
+{% block content %}
     <h1>Purchase Report</h1>
 
     <p>Total purchases: {{ purchases|length }}</p>
-    <p>
-        Total Units Purchased: {{ total_units }}
-    </p>
 
-    <p>
-        Total Purchase Cost: Ksh {{ total_cost }}
-    </p>
+    <p>Total Units Purchased: {{ total_units }}</p>
+
+    <p>Total Purchase Cost: Ksh {{ total_cost }}</p>
 
     <table border="1">
         <thead>
@@ -32,25 +28,21 @@
 
         <tbody>
             {% for purchase in purchases %}
-            <tr>
-                <td>{{ purchase.drug.name }}</td>
-                <td>{{ purchase.supplier }}</td>
-                <td>{{ purchase.quantity }}</td>
-                <td>Ksh {{ purchase.cost_price }}</td>
-                <td>
-                    Ksh {{ purchase.quantity|add:"0" }}
-                </td>
-                <td>{{ purchase.purchase_date }}</td>
-                <td>{{ purchase.invoice_number }}</td>
-                <td>{{ purchase.received_by }}</td>
-            </tr>
+                <tr>
+                    <td>{{ purchase.drug.name }}</td>
+                    <td>{{ purchase.supplier }}</td>
+                    <td>{{ purchase.quantity }}</td>
+                    <td>Ksh {{ purchase.cost_price }}</td>
+                    <td>Ksh {{ purchase.total_cost }}</td>
+                    <td>{{ purchase.purchase_date }}</td>
+                    <td>{{ purchase.invoice_number|default:"-" }}</td>
+                    <td>{{ purchase.received_by }}</td>
+                </tr>
             {% empty %}
-            <tr>
-                <td colspan="8">No purchases found.</td>
-            </tr>
+                <tr>
+                    <td colspan="8">No purchases found.</td>
+                </tr>
             {% endfor %}
         </tbody>
     </table>
-
-</body>
-</html>
+{% endblock %}

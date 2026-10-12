@@ -173,7 +173,11 @@
                 </td>
 
                 <td>
-                    {{ activity.user }}
+                    {% if activity.user %}
+                        {{ activity.user.username }}
+                    {% else %}
+                        System
+                    {% endif %}
                 </td>
 
                 <td>

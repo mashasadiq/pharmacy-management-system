@@ -1,3 +1,9 @@
+{% extends "base.html" %}
+
+{% block title %}Expired Drugs{% endblock %}
+
+{% block content %}
+
 <h1>Expired Drugs</h1>
 
 {% for drug in drugs %}
@@ -7,3 +13,5 @@
 {% empty %}
     <p>No expired drugs.</p>
 {% endfor %}
+
+{% endblock %}

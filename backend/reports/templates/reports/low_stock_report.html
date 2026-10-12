@@ -1,15 +1,15 @@
-<!DOCTYPE html>
-<html>
-<head>
-    <title>Low Stock Report</title>
-</head>
-<body>
+{% extends "base.html" %}
+
+{% block title %}Low Stock Report{% endblock %}
+
+{% block content %}
 
     <h1>Low Stock Report</h1>
 
     <p>Drugs at or below minimum stock level: {{ drugs|length }}</p>
 
     <table border="1">
+
         <thead>
             <tr>
                 <th>Drug</th>
@@ -22,22 +22,28 @@
         </thead>
 
         <tbody>
+
             {% for drug in drugs %}
-            <tr>
-                <td>{{ drug.name }}</td>
-                <td>{{ drug.generic_name }}</td>
-                <td>{{ drug.quantity_in_stock }}</td>
-                <td>{{ drug.minimum_stock }}</td>
-                <td>{{ drug.unit }}</td>
-                <td>{{ drug.selling_price }}</td>
-            </tr>
+
+                <tr>
+                    <td>{{ drug.name }}</td>
+                    <td>{{ drug.generic_name }}</td>
+                    <td>{{ drug.quantity_in_stock }}</td>
+                    <td>{{ drug.minimum_stock }}</td>
+                    <td>{{ drug.unit }}</td>
+                    <td>{{ drug.selling_price }}</td>
+                </tr>
+
             {% empty %}
-            <tr>
-                <td colspan="6">No low-stock drugs found.</td>
-            </tr>
+
+                <tr>
+                    <td colspan="6">No low-stock drugs found.</td>
+                </tr>
+
             {% endfor %}
+
         </tbody>
+
     </table>
 
-</body>
-</html>
+{% endblock %}

@@ -1,3 +1,9 @@
+{% extends "base.html" %}
+
+{% block title %}Low Stock Drugs{% endblock %}
+
+{% block content %}
+
 <h1>Low Stock Drugs</h1>
 
 {% for drug in drugs %}
@@ -9,3 +15,5 @@
 {% empty %}
     <p>No low-stock drugs.</p>
 {% endfor %}
+
+{% endblock %}

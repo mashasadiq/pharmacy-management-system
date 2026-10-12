@@ -1,96 +1,171 @@
-<!DOCTYPE html>
+{% extends "base.html" %}
 
-<html>
-<head>
-    <title>Record Purchase</title>
-</head>
-<body>
+{% block title %}Record Purchase{% endblock %}
 
-<h1>Record Purchase</h1>
+{% block extra_css %}
+<style>
+    .purchase-container {
+        max-width: 750px;
+    }
 
-<form id="purchase-form">
-    {% csrf_token %}
+    .purchase-section {
+        margin-bottom: 22px;
+    }
 
-    <h2>Drug</h2>
+    .purchase-section h2 {
+        font-size: 16px;
+        margin-bottom: 10px;
+    }
 
-    <select id="drug" required>
-        <option value="">Select Drug</option>
+    .purchase-section select,
+    .purchase-section input,
+    .purchase-section textarea {
+        width: 100%;
+        padding: 11px 12px;
+        border: 1px solid #d5dde3;
+        border-radius: 6px;
+        font: inherit;
+    }
 
-        {% for drug in drugs %}
-            <option value="{{ drug.id }}">
-                {{ drug.name }} - Current Stock: {{ drug.quantity_in_stock }}
-            </option>
-        {% endfor %}
-    </select>
+    .purchase-section textarea {
+        min-height: 90px;
+        resize: vertical;
+    }
 
-    <h2>Supplier</h2>
+    .purchase-section select:focus,
+    .purchase-section input:focus,
+    .purchase-section textarea:focus {
+        outline: none;
+        border-color: #087e70;
+    }
 
-    <select id="supplier" required>
-        <option value="">Select Supplier</option>
+    .purchase-button {
+        padding: 12px 20px;
+        border: none;
+        border-radius: 6px;
+        background: #087e70;
+        color: white;
+        cursor: pointer;
+        font-weight: 600;
+    }
 
-        {% for supplier in suppliers %}
-            <option value="{{ supplier.id }}">
-                {{ supplier.company_name }}
-            </option>
-        {% endfor %}
-    </select>
+    .purchase-button:disabled {
+        opacity: 0.6;
+        cursor: not-allowed;
+    }
 
-    <h2>Quantity</h2>
+    #message {
+        margin-top: 18px;
+        padding: 12px;
+        border-radius: 6px;
+    }
+</style>
+{% endblock %}
 
-    <input
-        type="number"
-        id="quantity"
-        min="1"
-        placeholder="Quantity received"
-        required
-    >
+{% block content %}
 
-    <h2>Cost Price</h2>
+<div class="purchase-container">
 
-    <input
-        type="number"
-        id="cost_price"
-        min="0"
-        step="0.01"
-        placeholder="Cost price per unit"
-        required
-    >
+    <h1>Record Purchase</h1>
 
-    <h2>Purchase Date</h2>
+    <form id="purchase-form">
+        {% csrf_token %}
 
-    <input
-        type="date"
-        id="purchase_date"
-        required
-    >
+        <div class="purchase-section">
+            <h2>Drug</h2>
 
-    
-    <h2>Supplier Invoice Number (Optional)</h2>
+            <select id="drug" required>
+                <option value="">Select Drug</option>
 
-    <input
-        type="text"
-        id="invoice_number"
-        placeholder="Enter supplier invoice number if available"
-    >
+                {% for drug in drugs %}
+                    <option value="{{ drug.id }}">
+                        {{ drug.name }} - Current Stock: {{ drug.quantity_in_stock }}
+                    </option>
+                {% endfor %}
+            </select>
+        </div>
 
-    <h2>Remarks</h2>
+        <div class="purchase-section">
+            <h2>Supplier</h2>
 
-    <textarea
-        id="remarks"
-        placeholder="Optional remarks"
-    ></textarea>
+            <select id="supplier" required>
+                <option value="">Select Supplier</option>
 
-    <br><br>
+                {% for supplier in suppliers %}
+                    <option value="{{ supplier.id }}">
+                        {{ supplier.company_name }}
+                    </option>
+                {% endfor %}
+            </select>
+        </div>
 
-    <button type="submit" id="record-purchase-btn">
-        Record Purchase
-    </button>
+        <div class="purchase-section">
+            <h2>Quantity</h2>
 
-</form>
+            <input
+                type="number"
+                id="quantity"
+                min="1"
+                placeholder="Quantity received"
+                required
+            >
+        </div>
 
-<p id="message"></p>
+        <div class="purchase-section">
+            <h2>Cost Price</h2>
 
+            <input
+                type="number"
+                id="cost_price"
+                min="0"
+                step="0.01"
+                placeholder="Cost price per unit"
+                required
+            >
+        </div>
 
+        <div class="purchase-section">
+            <h2>Purchase Date</h2>
+
+            <input
+                type="date"
+                id="purchase_date"
+                required
+            >
+        </div>
+
+        <div class="purchase-section">
+            <h2>Supplier Invoice Number (Optional)</h2>
+
+            <input
+                type="text"
+                id="invoice_number"
+                placeholder="Enter supplier invoice number if available"
+            >
+        </div>
+
+        <div class="purchase-section">
+            <h2>Remarks</h2>
+
+            <textarea
+                id="remarks"
+                placeholder="Optional remarks"
+            ></textarea>
+        </div>
+
+        <button
+            type="submit"
+            id="record-purchase-btn"
+            class="purchase-button"
+        >
+            Record Purchase
+        </button>
+
+    </form>
+
+    <p id="message" role="status" aria-live="polite"></p>
+
+</div>
 
 <script>
     // Submit a purchase once and display the API result.
@@ -115,6 +190,7 @@
             const purchaseDate = document.getElementById("purchase_date").value;
             const invoiceNumber = document.getElementById("invoice_number").value;
             const remarks = document.getElementById("remarks").value;
+
             const csrfToken = document.querySelector(
                 "[name=csrfmiddlewaretoken]"
             ).value;
@@ -149,8 +225,6 @@
                     return;
                 }
 
-                                
-                                
                 message.textContent =
                     data.message +
                     " | Purchase reference: " + data.purchase_reference +
@@ -159,7 +233,7 @@
                     " | Drug: " + data.drug +
                     " | Quantity received: " + data.quantity +
                     " | Updated stock: " + data.new_stock;
-                    
+
                 // Clear the form only after the server confirms success.
                 form.reset();
 
@@ -175,5 +249,4 @@
     );
 </script>
 
-</body>
-</html>
+{% endblock %}

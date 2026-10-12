@@ -1,86 +1,134 @@
-<!DOCTYPE html>
+{% extends "base.html" %}
 
-<html>
-<head>
-    <title>Purchase History</title>
-</head>
+{% block title %}Purchase History{% endblock %}
 
-<body>
+{% block extra_css %}
+<style>
+    .purchase-table-container {
+        width: 100%;
+        overflow-x: auto;
+    }
+
+    .purchase-table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-top: 20px;
+    }
+
+    .purchase-table th,
+    .purchase-table td {
+        padding: 12px;
+        border: 1px solid #e1e7eb;
+        text-align: left;
+        white-space: nowrap;
+    }
+
+    .purchase-table th {
+        background: #f3f6f8;
+        font-weight: 600;
+    }
+
+    .purchase-table tbody tr:hover {
+        background: #f8fafb;
+    }
+
+    .purchase-action {
+        display: inline-block;
+        padding: 10px 15px;
+        border-radius: 6px;
+        background: #087e70;
+        color: white;
+        text-decoration: none;
+        font-weight: 600;
+    }
+
+    .purchase-action:hover {
+        background: #06685d;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
 
 <h1>Purchase History</h1>
 
-<a href="{% url 'create_purchase_page' %}">
+<a href="{% url 'create_purchase_page' %}" class="purchase-action">
     Record New Purchase
 </a>
 
-<br><br>
+<div class="purchase-table-container">
 
-<table border="1" cellpadding="8">
+    <table class="purchase-table">
 
-    <thead>
-        <tr>
-            <th>Purchase #</th>
-            <th>Drug</th>
-            <th>Supplier</th>
-            <th>Quantity</th>
-            <th>Cost Price</th>
-            <th>Purchase Date</th>
-            <th>Invoice Number</th>
-            <th>Received By</th>
-        </tr>
-    </thead>
-
-    <tbody>
-
-        {% for purchase in purchases %}
-
+        <thead>
             <tr>
-                <td><a href="{% url 'purchase_detail' purchase.id %}">
-                        Purchase #{{ purchase.id }}
-                    </a></td>
-
-                <td>
-                    {{ purchase.drug.name }}
-                </td>
-
-                <td>
-                    {{ purchase.supplier.company_name }}
-                </td>
-
-                <td>
-                    {{ purchase.quantity }}
-                </td>
-
-                <td>
-                    Ksh {{ purchase.cost_price }}
-                </td>
-
-                <td>
-                    {{ purchase.purchase_date }}
-                </td>
-
-                <td>
-                    {{ purchase.invoice_number }}
-                </td>
-
-                <td>
-                    {{ purchase.received_by.username }}
-                </td>
+                <th>Purchase #</th>
+                <th>Drug</th>
+                <th>Supplier</th>
+                <th>Quantity</th>
+                <th>Cost Price</th>
+                <th>Purchase Date</th>
+                <th>Invoice Number</th>
+                <th>Received By</th>
             </tr>
+        </thead>
 
-        {% empty %}
+        <tbody>
 
-            <tr>
-                <td colspan="8">
-                    No purchases have been recorded yet.
-                </td>
-            </tr>
+            {% for purchase in purchases %}
 
-        {% endfor %}
+                <tr>
 
-    </tbody>
+                    <td>
+                        <a href="{% url 'purchase_detail' purchase.id %}">
+                            Purchase #{{ purchase.id }}
+                        </a>
+                    </td>
 
-</table>
+                    <td>
+                        {{ purchase.drug.name }}
+                    </td>
 
-</body>
-</html>
+                    <td>
+                        {{ purchase.supplier.company_name }}
+                    </td>
+
+                    <td>
+                        {{ purchase.quantity }}
+                    </td>
+
+                    <td>
+                        Ksh {{ purchase.cost_price }}
+                    </td>
+
+                    <td>
+                        {{ purchase.purchase_date }}
+                    </td>
+
+                    <td>
+                        {{ purchase.invoice_number|default:"Not provided" }}
+                    </td>
+
+                    <td>
+                        {{ purchase.received_by.username }}
+                    </td>
+
+                </tr>
+
+            {% empty %}
+
+                <tr>
+                    <td colspan="8">
+                        No purchases have been recorded yet.
+                    </td>
+                </tr>
+
+            {% endfor %}
+
+        </tbody>
+
+    </table>
+
+</div>
+
+{% endblock %}

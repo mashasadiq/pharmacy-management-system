@@ -1,3 +1,9 @@
+{% extends "base.html" %}
+
+{% block title %}Pharmacy Inventory{% endblock %}
+
+{% block content %}
+
 <h1>Pharmacy Inventory</h1>
 
 {% if request.user.role == "ADMIN" %}
@@ -12,14 +18,17 @@
         value="{{ query }}"
     >
 
-<button type="submit">Search</button>
-
+    <button type="submit">Search</button>
 </form>
 
 <hr>
 
-{% for drug in drugs %} <p>{{ drug.name }} — Stock: {{ drug.quantity_in_stock }}</p>
-{% empty %} <p>No drugs found.</p>
+{% for drug in drugs %}
+    <p>
+        {{ drug.name }} — Stock: {{ drug.quantity_in_stock }}
+    </p>
+{% empty %}
+    <p>No drugs found.</p>
 {% endfor %}
 
-
+{% endblock %}

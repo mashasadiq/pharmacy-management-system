@@ -10,11 +10,13 @@ from inventory.models import Drug
 from patients.models import Patient
 from sales.models import Sale
 
+from django.http import HttpResponseForbidden
+
 
 @login_required
 def dashboard(request):
     if request.user.role == "ADMIN":
-        today = timezone.now().date()
+        today = timezone.localdate()
         thirty_days_from_now = today + timedelta(days=30)
 
         completed_sales_today = Sale.objects.filter(
@@ -84,4 +86,6 @@ def dashboard(request):
             context,
         )
 
-    return render(request, "dashboard/dashboard.html")
+    return HttpResponseForbidden(
+        "Your account does not have permission to access this dashboard."
+        )

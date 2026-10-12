@@ -3,22 +3,215 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Login - Pharmacy Management System</title>
+
+    <title>Sign In | Pharmacy Management System</title>
+
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 24px;
+            font-family: Arial, sans-serif;
+            background: #f3f6f8;
+            color: #172b3a;
+        }
+
+        .login-container {
+            width: 100%;
+            max-width: 430px;
+            padding: 42px;
+            background: #ffffff;
+            border: 1px solid #e5ebef;
+            border-radius: 16px;
+            box-shadow: 0 12px 40px rgba(20, 45, 60, 0.07);
+        }
+
+        .brand {
+            text-align: center;
+            margin-bottom: 34px;
+        }
+
+        .brand-icon {
+            width: 58px;
+            height: 58px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 16px;
+            border-radius: 15px;
+            background: #e7f5f2;
+            color: #087e70;
+            font-size: 30px;
+            font-weight: bold;
+        }
+
+        .brand h1 {
+            font-size: 21px;
+            font-weight: 700;
+            margin-bottom: 8px;
+        }
+
+        .brand p {
+            color: #71808c;
+            font-size: 13px;
+        }
+
+        .login-heading {
+            margin-bottom: 25px;
+        }
+
+        .login-heading h2 {
+            font-size: 23px;
+            margin-bottom: 8px;
+        }
+
+        .login-heading p {
+            color: #71808c;
+            font-size: 14px;
+        }
+
+        .form-field {
+            margin-bottom: 19px;
+        }
+
+        .form-field label {
+            display: block;
+            margin-bottom: 8px;
+            font-size: 13px;
+            font-weight: 600;
+        }
+
+        .form-field input {
+            width: 100%;
+            padding: 13px 14px;
+            border: 1px solid #dce4e9;
+            border-radius: 8px;
+            outline: none;
+            font-size: 14px;
+            transition: border-color 0.2s, box-shadow 0.2s;
+        }
+
+        .form-field input:focus {
+            border-color: #087e70;
+            box-shadow: 0 0 0 3px rgba(8, 126, 112, 0.10);
+        }
+
+        .error-message {
+            color: #c0392b;
+            font-size: 13px;
+            margin-top: 6px;
+        }
+
+        .form-errors {
+            padding: 12px;
+            margin-bottom: 18px;
+            border-radius: 8px;
+            background: #fff0ee;
+            color: #b83227;
+            font-size: 13px;
+        }
+
+        .login-button {
+            width: 100%;
+            padding: 14px;
+            margin-top: 7px;
+            border: none;
+            border-radius: 8px;
+            background: #087e70;
+            color: white;
+            font-size: 15px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        .login-button:hover {
+            background: #06685d;
+        }
+
+        .footer {
+            margin-top: 28px;
+            text-align: center;
+            color: #87939c;
+            font-size: 12px;
+        }
+
+        @media (max-width: 480px) {
+            .login-container {
+                padding: 30px 22px;
+            }
+        }
+    </style>
 </head>
+
 <body>
 
-    <h1>Pharmacy Management System</h1>
+    <main class="login-container">
 
-    <h2>Login</h2>
+        <header class="brand">
+            <div class="brand-icon">+</div>
 
-    <form method="post">
-        {% csrf_token %}
+            <h1>Pharmacy Management</h1>
 
-        {{ form.as_p }}
+            <p>Inventory, patients and sales management</p>
+        </header>
 
-        <button type="submit">Login</button>
-    </form>
+        <section class="login-heading">
+            <h2>Welcome back</h2>
+            <p>Sign in to access your pharmacy workspace.</p>
+        </section>
+
+        <form method="post">
+            {% csrf_token %}
+
+            {% if form.non_field_errors %}
+                <div class="form-errors">
+                    {{ form.non_field_errors }}
+                </div>
+            {% endif %}
+
+            <div class="form-field">
+                <label for="{{ form.username.id_for_label }}">
+                    Username
+                </label>
+
+                {{ form.username }}
+
+                {% for error in form.username.errors %}
+                    <p class="error-message">{{ error }}</p>
+                {% endfor %}
+            </div>
+
+            <div class="form-field">
+                <label for="{{ form.password.id_for_label }}">
+                    Password
+                </label>
+
+                {{ form.password }}
+
+                {% for error in form.password.errors %}
+                    <p class="error-message">{{ error }}</p>
+                {% endfor %}
+            </div>
+
+            <button type="submit" class="login-button">
+                Sign In
+            </button>
+        </form>
+
+        <footer class="footer">
+            Pharmacy Management System
+        </footer>
+
+    </main>
 
 </body>
 </html>
-

@@ -1,11 +1,8 @@
-<!DOCTYPE html>
+{% extends "base.html" %}
 
-<html>
-<head>
-    <title>Purchase #{{ purchase.id }}</title>
-</head>
+{% block title %}Purchase #{{ purchase.id }}{% endblock %}
 
-<body>
+{% block content %}
 
 <h1>Purchase #{{ purchase.id }}</h1>
 
@@ -36,7 +33,7 @@
 
 <p>
     <strong>Invoice Number:</strong>
-    {{ purchase.invoice_number }}
+    {{ purchase.invoice_number|default:"Not provided" }}
 </p>
 
 <p>
@@ -60,5 +57,4 @@
     Back to Purchase History
 </a>
 
-</body>
-</html>
+{% endblock %}

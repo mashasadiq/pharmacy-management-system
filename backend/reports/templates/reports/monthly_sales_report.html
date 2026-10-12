@@ -1,9 +1,8 @@
-<!DOCTYPE html>
-<html>
-<head>
-    <title>Monthly Sales Report</title>
-</head>
-<body>
+{% extends "base.html" %}
+
+{% block title %}Monthly Sales Report{% endblock %}
+
+{% block content %}
 
     <h1>Monthly Sales Report</h1>
 
@@ -24,6 +23,7 @@
         <label for="month">Month:</label>
 
         <select id="month" name="month" required>
+
             <option value="">Select Month</option>
 
             <option value="1" {% if month == "1" %}selected{% endif %}>
@@ -73,9 +73,12 @@
             <option value="12" {% if month == "12" %}selected{% endif %}>
                 December
             </option>
+
         </select>
 
-        <button type="submit">Generate Report</button>
+        <button type="submit">
+            Generate Report
+        </button>
 
     </form>
 
@@ -84,17 +87,18 @@
         <h2>Sales for {{ month }}/{{ year }}</h2>
 
         <p>
-            Number of completed sales:
-            {{ sales|length }}
+            Number of completed sales: {{ sales|length }}
         </p>
+
         <p>
             Total Revenue: Ksh {{ total_revenue }}
         </p>
 
         <table border="1">
+
             <thead>
                 <tr>
-                    <th>Sale ID</th>
+                    <th>Invoice Number</th>
                     <th>Patient</th>
                     <th>Pharmacist</th>
                     <th>Total Amount</th>
@@ -106,25 +110,30 @@
             <tbody>
 
                 {% for sale in sales %}
-                <tr>
-                    <td>{{ sale.id }}</td>
 
-                    <td>
-                        {{ sale.patient.first_name }}
-                        {{ sale.patient.last_name }}
-                    </td>
+                    <tr>
+                        <td>
+                            {{ sale.invoice_number|default:sale.id }}
+                        </td>
 
-                    <td>{{ sale.pharmacist }}</td>
+                        <td>
+                            {{ sale.patient.first_name }}
+                            {{ sale.patient.last_name }}
+                        </td>
 
-                    <td>Ksh {{ sale.total_amount }}</td>
+                        <td>{{ sale.pharmacist }}</td>
 
-                    <td>{{ sale.payment_method }}</td>
+                        <td>Ksh {{ sale.total_amount }}</td>
 
-                    <td>{{ sale.sale_date }}</td>
-                </tr>
+                        <td>{{ sale.payment_method }}</td>
+
+                        <td>{{ sale.sale_date }}</td>
+                    </tr>
+
                 {% endfor %}
 
             </tbody>
+
         </table>
 
     {% elif year and month %}
@@ -135,5 +144,4 @@
 
     {% endif %}
 
-</body>
-</html>
+{% endblock %}
