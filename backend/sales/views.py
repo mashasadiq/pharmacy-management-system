@@ -17,6 +17,8 @@ from .services import complete_sale, cancel_sale
 
 from django.utils import timezone
 
+from django.core.exceptions import ValidationError
+
 
 
 
@@ -127,11 +129,11 @@ def create_sale(request):
             status=400,
         )
 
-    except Exception as e:
+    except Exception:
         transaction.set_rollback(True)
 
         return JsonResponse(
-            {"error": str(e)},
+            {"error": "An unexpected error occurred while creating the sale."},
             status=500,
         )
 
@@ -263,8 +265,9 @@ def complete_sale_view(request, sale_id):
             status=405,
         )
 
+    #ensures another completion request for the same sale waits until the first transaction finishes.
     sale = get_object_or_404(
-        Sale.objects.prefetch_related("items__drug"),
+        Sale.objects.select_for_update().prefetch_related("items__drug"),
         id=sale_id,
     )
 
@@ -319,11 +322,26 @@ def complete_sale_view(request, sale_id):
             }
         )
 
-    except Exception as e:
+    except ValidationError as e:
+        transaction.set_rollback(True)
+
         return JsonResponse(
             {"error": str(e)},
             status=400,
         )
+
+    except Exception:
+        transaction.set_rollback(True)
+
+        return JsonResponse(
+            {"error": "An unexpected error occurred while completing the sale."},
+            status=500,
+        )
+
+
+
+
+
 
 @login_required
 @transaction.atomic
@@ -419,11 +437,11 @@ def edit_pending_sale(request, sale_id):
             status=400,
         )
 
-    except Exception as e:
+    except Exception:
         transaction.set_rollback(True)
 
         return JsonResponse(
-            {"error": str(e)},
+            {"error": "An unexpected error occurred while updating the sale."},
             status=500,
         )
 
@@ -475,7 +493,7 @@ def delete_pending_sale(request, sale_id):
             "sale_id": sale_id,
         }
     )
-    
+
 
 @login_required
 @transaction.atomic
@@ -496,7 +514,7 @@ def cancel_sale_view(request, sale_id):
         )
 
     sale = get_object_or_404(
-        Sale.objects.prefetch_related("items__drug"),
+        Sale.objects.select_for_update().prefetch_related("items__drug"),
         id=sale_id,
     )
 
@@ -530,8 +548,19 @@ def cancel_sale_view(request, sale_id):
             }
         )
 
-    except Exception as e:
+
+    except ValidationError as e:
+        transaction.set_rollback(True)
+
         return JsonResponse(
             {"error": str(e)},
             status=400,
+        )
+
+    except Exception:
+        transaction.set_rollback(True)
+
+        return JsonResponse(
+            {"error": "An unexpected error occurred while cancelling the sale."},
+            status=500,
         )

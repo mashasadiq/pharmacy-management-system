@@ -167,8 +167,31 @@
 
 </div>
 
+
 <script>
-    // Submit a purchase once and display the API result.
+    // Keep the current purchase key across retries and page refreshes.
+    const storageKey = "pending_purchase_idempotency_key";
+
+    // Retrieves the existing key or creates one if none exists.
+    function getPurchaseKey() {
+        let key = sessionStorage.getItem(storageKey);
+
+        if (!key) {
+            key = crypto.randomUUID();
+            sessionStorage.setItem(storageKey, key);
+        }
+
+        return key;
+    }
+
+    // Creates a fresh key after a confirmed purchase.
+    function generateNewPurchaseKey() {
+        const key = crypto.randomUUID();
+        sessionStorage.setItem(storageKey, key);
+        return key;
+    }
+
+    // Submit a purchase and prevent duplicate submissions.
     document.getElementById("purchase-form").addEventListener(
         "submit",
         async function(event) {
@@ -178,7 +201,6 @@
             const button = document.getElementById("record-purchase-btn");
             const message = document.getElementById("message");
 
-            // Prevent repeated submissions while the request is running.
             if (button.disabled) {
                 return;
             }
@@ -194,6 +216,9 @@
             const csrfToken = document.querySelector(
                 "[name=csrfmiddlewaretoken]"
             ).value;
+
+            // Reuse this key if the previous request needs retrying.
+            const idempotencyKey = getPurchaseKey();
 
             button.disabled = true;
             button.textContent = "Recording Purchase...";
@@ -213,7 +238,8 @@
                         cost_price: costPrice,
                         purchase_date: purchaseDate,
                         invoice_number: invoiceNumber,
-                        remarks: remarks
+                        remarks: remarks,
+                        idempotency_key: idempotencyKey
                     })
                 });
 
@@ -234,13 +260,17 @@
                     " | Quantity received: " + data.quantity +
                     " | Updated stock: " + data.new_stock;
 
-                // Clear the form only after the server confirms success.
+                // Reset the form only after confirmed success.
                 form.reset();
 
+                // A confirmed purchase is complete. Prepare a fresh key.
+                generateNewPurchaseKey();
+
             } catch (error) {
+                // Keep the same key because the server may have saved the purchase.
                 message.textContent =
-                    "Unable to confirm the purchase. Check the purchase list " +
-                    "before retrying to avoid recording it twice.";
+                    "Unable to confirm the purchase. Retry using the same form " +
+                    "to avoid recording it twice.";
             } finally {
                 button.disabled = false;
                 button.textContent = "Record Purchase";

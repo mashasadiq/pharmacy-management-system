@@ -1,5 +1,5 @@
 import json
-from decimal import Decimal
+from decimal import Decimal, InvalidOperation
 
 from django.contrib.auth.decorators import login_required
 from django.core.exceptions import ValidationError
@@ -38,8 +38,7 @@ def create_purchase_page(request):
 @transaction.atomic
 def create_purchase(request):
     """
-    Record a new purchase, increase inventory stock,
-    and create the related audit record.
+    Record a purchase while preventing duplicate submissions.
     """
 
     if request.method != "POST":
@@ -51,6 +50,9 @@ def create_purchase(request):
     try:
         data = json.loads(request.body)
 
+        # Every purchase request must have an idempotency key.
+        idempotency_key = data["idempotency_key"]
+
         drug = get_object_or_404(
             Drug,
             id=data["drug_id"],
@@ -61,10 +63,33 @@ def create_purchase(request):
             id=data["supplier_id"],
         )
 
-        quantity = int(data["quantity"])
-        cost_price = Decimal(data["cost_price"])
+        raw_quantity = data["quantity"]
 
-        purchase = create_purchase_service(
+        if isinstance(raw_quantity, bool):
+            raise ValidationError("Quantity must be a whole number.")
+
+        try:
+            quantity = int(raw_quantity)
+        except (ValueError, TypeError):
+            raise ValidationError("Quantity must be a valid whole number.")
+
+        if str(quantity) != str(raw_quantity).strip():
+            raise ValidationError("Quantity must be a whole number.")
+
+        if quantity <= 0:
+            raise ValidationError("Quantity must be greater than zero.")
+
+
+        # Convert the submitted cost price into a Decimal safely.
+        try:
+            cost_price = Decimal(str(data["cost_price"]))
+        except (InvalidOperation, TypeError, ValueError):
+            raise ValidationError("Enter a valid cost price.")
+
+
+
+        # The service tells us whether this is a new purchase or a retry.
+        purchase, created = create_purchase_service(
             drug=drug,
             supplier=supplier,
             received_by=request.user,
@@ -73,20 +98,25 @@ def create_purchase(request):
             purchase_date=data["purchase_date"],
             invoice_number=(data.get("invoice_number") or "").strip(),
             remarks=data.get("remarks", ""),
+            idempotency_key=idempotency_key,
         )
 
-        
         return JsonResponse(
             {
-                "message": "Purchase recorded successfully.",
+                "message": (
+                    "Purchase recorded successfully."
+                    if created
+                    else "This purchase was already recorded."
+                ),
                 "purchase_id": purchase.id,
                 "purchase_reference": purchase.purchase_reference,
                 "supplier_invoice_number": purchase.invoice_number,
-                "drug": drug.name,
-                "quantity": quantity,
-                "new_stock": drug.quantity_in_stock,
+                "drug": purchase.drug.name,
+                "quantity": purchase.quantity,
+                "new_stock": purchase.drug.quantity_in_stock,
+                "created": created,
             },
-            status=201,
+            status=201 if created else 200,
         )
 
     except (KeyError, ValueError, TypeError, ValidationError) as e:
@@ -104,6 +134,7 @@ def create_purchase(request):
             {"error": str(e)},
             status=500,
         )
+
 
 @admin_required
 def purchase_list(request):
