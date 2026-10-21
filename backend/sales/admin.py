@@ -1,12 +1,9 @@
 from django.contrib import admin
 
-from django.db import transaction
 from django.core.exceptions import ValidationError
 
 
 from .models import Sale, SaleItem
-from inventory.models import Drug
-
 from audit_logs.models import AuditLog
 
 from .services import complete_sale, cancel_sale, update_completed_sale
@@ -16,6 +13,9 @@ class SaleItemInline(admin.TabularInline):
     model = SaleItem
     extra = 1
 
+    def get_queryset(self, request):
+        return super().get_queryset(request).select_related("drug")
+
     def has_delete_permission(self, request, obj=None):
         """
         Allow SaleItems to be deleted only while the Sale is pending.
@@ -24,7 +24,6 @@ class SaleItemInline(admin.TabularInline):
             return False
 
         return super().has_delete_permission(request, obj)
-
 
 @admin.register(Sale)
 class SaleAdmin(admin.ModelAdmin):
@@ -55,6 +54,13 @@ class SaleAdmin(admin.ModelAdmin):
     inlines = [SaleItemInline]
 
 
+    def get_queryset(self, request):
+        return super().get_queryset(request).select_related(
+            "patient",
+            "pharmacist",
+        )
+
+
     def has_delete_permission(self, request, obj=None):
         """
         Allow deletion only for pending sales.
@@ -77,7 +83,6 @@ class SaleAdmin(admin.ModelAdmin):
         actions = super().get_actions(request)
         actions.pop("delete_selected", None)
         return actions
-
 
 
     def save_model(self, request, obj, form, change):
@@ -192,10 +197,9 @@ class SaleAdmin(admin.ModelAdmin):
 
                 # Existing SaleItem
                 if item_form.instance.pk:
-                    old_item = SaleItem.objects.get(pk=item_form.instance.pk)
+                    old_item = item_form.instance
                     old_drug = old_item.drug
                     old_quantity = old_item.quantity
-
                     # Item is being deleted
                     if item_form.cleaned_data.get("DELETE"):
                         stock_changes[old_drug.id] = (
@@ -260,3 +264,9 @@ class SaleItemAdmin(admin.ModelAdmin):
     search_fields = (
         "drug__name",
     )
+
+    def get_queryset(self, request):
+        return super().get_queryset(request).select_related(
+            "sale",
+            "drug",
+        )

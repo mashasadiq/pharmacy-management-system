@@ -3,6 +3,7 @@ from django.db.models import Q
 from django.shortcuts import get_object_or_404, render
 
 from .models import Patient
+from audit_logs.models import AuditLog
 
 from .forms import PatientForm
 
@@ -40,7 +41,9 @@ def patient_list(request):
     """Display patients and allow searching by key identifying details."""
     query = request.GET.get("q", "").strip()
 
-    patients = Patient.objects.all()
+    patients = Patient.objects.select_related(
+        "created_by"
+    )
 
     if query:
         patients = patients.filter(
@@ -60,16 +63,31 @@ def patient_list(request):
     )
 
 
+
 @login_required
 def patient_detail(request, patient_id):
     """Display patient information together with their sales history."""
     patient = get_object_or_404(Patient, id=patient_id)
-    
+
     sales = patient.sales.select_related(
         "pharmacist"
     ).prefetch_related(
         "items__drug"
     )
+
+    # Record administrator access to patient clinical history.
+    if request.user.role == "ADMIN":
+        AuditLog.objects.create(
+            user=request.user,
+            action="VIEW",
+            table_name="Patient",
+            record_id=patient.id,
+            description=(
+                f"Administrator viewed clinical history "
+                f"for patient {patient.patient_number}."
+            ),
+            ip_address=request.META.get("REMOTE_ADDR"),
+        )
 
     return render(
         request,

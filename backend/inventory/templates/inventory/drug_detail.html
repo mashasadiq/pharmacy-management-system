@@ -1,0 +1,188 @@
+
+{% extends "base.html" %}
+
+{% block title %}{{ drug.name }} - Drug Details{% endblock %}
+
+{% block content %}
+
+<div class="page-header">
+    <div>
+        <h1>{{ drug.name }}</h1>
+        <p>{{ drug.generic_name }} | {{ drug.brand|default:"Brand not specified" }}</p>
+    </div>
+
+    <a href="{% url 'inventory_list' %}">← Back to Inventory</a>
+</div>
+
+<hr>
+
+<div class="drug-overview">
+    <div>
+        <small>Barcode</small>
+        <p><strong>{{ drug.barcode|default:"Not available" }}</strong></p>
+    </div>
+
+    <div>
+        <small>Category</small>
+        <p><strong>{{ drug.get_category_display }}</strong></p>
+    </div>
+
+    <div>
+        <small>Batch Number</small>
+        <p><strong>{{ drug.batch_number }}</strong></p>
+    </div>
+
+    <div>
+        <small>Supplier</small>
+        <p><strong>{{ drug.supplier }}</strong></p>
+    </div>
+</div>
+
+<hr>
+
+<h2>Pricing and Stock</h2>
+
+<div class="drug-cards">
+    <div class="drug-card">
+        <small>Cost Price</small>
+        <h2>Ksh {{ drug.cost_price|floatformat:2 }}</h2>
+    </div>
+
+    <div class="drug-card">
+        <small>Selling Price</small>
+        <h2>Ksh {{ drug.selling_price|floatformat:2 }}</h2>
+    </div>
+
+    <div class="drug-card">
+        <small>Available Stock</small>
+        <h2>{{ drug.quantity_in_stock }}</h2>
+        <small>{{ drug.get_unit_display }}</small>
+    </div>
+
+    <div class="drug-card">
+        <small>Minimum Stock</small>
+        <h2>{{ drug.minimum_stock }}</h2>
+    </div>
+</div>
+
+<h2>Stock Status</h2>
+
+{% if drug.quantity_in_stock == 0 %}
+    <p class="status-out">Out of Stock</p>
+{% elif drug.quantity_in_stock <= drug.minimum_stock %}
+    <p class="status-low">Low Stock</p>
+{% else %}
+    <p class="status-good">Sufficient Stock</p>
+{% endif %}
+
+<hr>
+
+<h2>Expiry Information</h2>
+
+<div class="drug-section">
+    <p>
+        <strong>Expiry Date:</strong>
+        {{ drug.expiry_date|date:"d M Y" }}
+    </p>
+
+    {% if drug.expiry_date < today %}
+        <p class="status-out">Expired</p>
+    {% else %}
+        <p class="status-good">Not Expired</p>
+    {% endif %}
+</div>
+
+<hr>
+
+<h2>Description</h2>
+
+<div class="drug-section">
+    {% if drug.description %}
+        {{ drug.description|linebreaks }}
+    {% else %}
+        <p>No description provided for this drug.</p>
+    {% endif %}
+</div>
+
+<hr>
+
+<div class="drug-footer">
+    <p>
+        <small>Registered: {{ drug.created_at|date:"d M Y, H:i" }}</small>
+    </p>
+
+    <p>
+        <small>Last Updated: {{ drug.updated_at|date:"d M Y, H:i" }}</small>
+    </p>
+</div>
+
+<style>
+    .page-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 15px;
+    }
+
+    .page-header p {
+        color: #777;
+    }
+
+    .drug-overview,
+    .drug-cards {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+        gap: 15px;
+        margin: 20px 0;
+    }
+
+    .drug-overview > div,
+    .drug-card,
+    .drug-section {
+        background: var(--card-bg, #fff);
+        border: 1px solid var(--border-color, #ddd);
+        border-radius: 8px;
+        padding: 18px;
+    }
+
+    .drug-overview small,
+    .drug-card small {
+        color: #777;
+    }
+
+    .drug-card h2 {
+        margin: 10px 0;
+    }
+
+    .status-out,
+    .status-low,
+    .status-good {
+        display: inline-block;
+        padding: 7px 12px;
+        border-radius: 5px;
+        font-weight: 600;
+    }
+
+    .status-out {
+        background: #fde8e8;
+        color: #b42318;
+    }
+
+    .status-low {
+        background: #fff1d6;
+        color: #946200;
+    }
+
+    .status-good {
+        background: #dcfce7;
+        color: #166534;
+    }
+
+    .drug-footer {
+        color: #777;
+        font-size: 13px;
+    }
+</style>
+
+{% endblock %}

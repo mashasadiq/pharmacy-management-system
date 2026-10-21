@@ -82,6 +82,10 @@
 
     </form>
 
+    {% if error %}
+        <p class="error">{{ error }}</p>
+    {% endif %}
+
     {% if sales %}
 
         <h2>Sales for {{ month }}/{{ year }}</h2>
@@ -136,12 +140,10 @@
 
         </table>
 
-    {% elif year and month %}
-
+    {% elif year and month and not error %}
         <p>
             No completed sales found for {{ month }}/{{ year }}.
         </p>
-
     {% endif %}
 
 {% endblock %}

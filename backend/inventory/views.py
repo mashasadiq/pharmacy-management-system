@@ -5,6 +5,7 @@ from django.db.models import F, Q
 from django.utils import timezone
 
 from accounts.decorators import admin_required
+from django.http import JsonResponse
 
 from .models import Drug
 from .forms import DrugForm
@@ -40,6 +41,42 @@ def inventory_list(request):
     )
 
 @login_required
+def search_drugs(request):
+    """
+    Search all inventory drugs by name, generic name,
+    brand, or barcode.
+    """
+
+    query = request.GET.get("q", "").strip()
+
+    if not query:
+        return JsonResponse({"drugs": []})
+
+    drugs = Drug.objects.filter(
+        Q(name__icontains=query)
+        | Q(generic_name__icontains=query)
+        | Q(brand__icontains=query)
+        | Q(barcode__icontains=query)
+    ).order_by("name")
+
+    results = [
+        {
+            "id": drug.id,
+            "name": drug.name,
+            "generic_name": drug.generic_name,
+            "brand": drug.brand,
+            "barcode": drug.barcode,
+            "selling_price": str(drug.selling_price),
+            "stock": drug.quantity_in_stock,
+            "minimum_stock": drug.minimum_stock,
+        }
+        for drug in drugs
+    ]
+
+    return JsonResponse({"drugs": results})
+
+
+@login_required
 def drug_detail(request, drug_id):
     """
     Display details of one drug.
@@ -50,8 +87,13 @@ def drug_detail(request, drug_id):
     return render(
         request,
         "inventory/drug_detail.html",
-        {"drug": drug},
+        {
+            "drug": drug,
+            "today": timezone.localdate(),
+        },
     )
+
+
 
 @login_required
 def low_stock_drugs(request):
@@ -77,7 +119,7 @@ def expired_drugs(request):
     """
 
     drugs = Drug.objects.filter(
-        expiry_date__lt=timezone.now().date()
+        expiry_date__lt=timezone.localdate()
     )
 
     return render(

@@ -66,6 +66,10 @@ def create_sale(request):
                 status=400,
             )
 
+                # Fetch all selected drugs in one database query.
+        drug_ids = {int(item["drug_id"]) for item in items}
+        drugs = Drug.objects.in_bulk(drug_ids)
+
         sale = Sale.objects.create(
             patient=patient,
             pharmacist=request.user,
@@ -76,10 +80,12 @@ def create_sale(request):
         total_amount = Decimal("0.00")
 
         for item in items:
-            drug = get_object_or_404(
-                Drug,
-                id=item["drug_id"]
-            )
+            drug = drugs.get(int(item["drug_id"]))
+
+            if drug is None:
+                raise ValueError(
+                    "One or more selected drugs could not be found."
+                )
 
             quantity = int(item["quantity"])
 
@@ -350,7 +356,7 @@ def edit_pending_sale(request, sale_id):
     Update the items of a pending sale without changing inventory.
     """
     sale = get_object_or_404(
-        Sale.objects.prefetch_related("items__drug"),
+        Sale,
         id=sale_id,
     )
 
@@ -381,10 +387,16 @@ def edit_pending_sale(request, sale_id):
         total_amount = Decimal("0.00")
 
         for item in items:
-            drug = get_object_or_404(
-                Drug,
-                id=item["drug_id"],
-            )
+            drug = drugs.get(int(item["drug_id"]))
+
+            if drug is None:
+                raise ValueError(
+                    "One or more selected drugs could not be found."
+                )
+
+            # Fetch all selected drugs in one database query.
+            drug_ids = {int(item["drug_id"]) for item in items}
+            drugs = Drug.objects.in_bulk(drug_ids)
 
             quantity = int(item["quantity"])
 
@@ -514,9 +526,10 @@ def cancel_sale_view(request, sale_id):
         )
 
     sale = get_object_or_404(
-        Sale.objects.select_for_update().prefetch_related("items__drug"),
+        Sale.objects.select_for_update().prefetch_related("items"),
         id=sale_id,
     )
+
 
     if sale.status != Sale.Status.COMPLETED:
         return JsonResponse(

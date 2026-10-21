@@ -4,6 +4,7 @@ from django.core.exceptions import ValidationError
 from sales.models import Sale
 
 from inventory.models import Drug
+from notifications.services import check_low_stock
 
 
 def complete_sale(sale, items):
@@ -50,6 +51,8 @@ def complete_sale(sale, items):
             drug.quantity_in_stock -= change_amount
             drug.save(update_fields=["quantity_in_stock"])
 
+            # Recheck whether the drug has reached its low-stock threshold.
+            check_low_stock(drug)
 
 def cancel_sale(sale):
     """
@@ -91,6 +94,7 @@ def cancel_sale(sale):
             drug.quantity_in_stock += quantity
             drug.save(update_fields=["quantity_in_stock"])
 
+@transaction.atomic
 def update_completed_sale(changes):
     """
     Apply inventory changes caused by editing a completed sale.
@@ -98,20 +102,40 @@ def update_completed_sale(changes):
     Positive values deduct stock, while negative values
     return stock to inventory.
     """
-    # Check stock BEFORE changing anything
+    # Ignore drugs whose stock does not change.
+    changes = {
+        drug_id: amount
+        for drug_id, amount in changes.items()
+        if amount != 0
+    }
+
+    if not changes:
+        return
+
+    # Fetch and lock all affected drugs in one query.
+    drugs = {
+        drug.id: drug
+        for drug in Drug.objects.select_for_update()
+        .filter(id__in=changes)
+        .order_by("id")
+    }
+
+    # Validate all changes before updating any stock.
     for drug_id, change_amount in changes.items():
-        if change_amount > 0:
-            drug = Drug.objects.get(id=drug_id)
+        drug = drugs.get(drug_id)
 
-            if change_amount > drug.quantity_in_stock:
-                raise ValidationError(
-                    f"Insufficient stock for {drug.name}."
-                )
+        if drug is None:
+            raise ValidationError(
+                "A drug associated with this sale no longer exists."
+            )
 
-    # Apply the inventory changes
-    with transaction.atomic():
-        for drug_id, change_amount in changes.items():
-            drug = Drug.objects.get(id=drug_id)
+        if change_amount > drug.quantity_in_stock:
+            raise ValidationError(
+                f"Insufficient stock for {drug.name}."
+            )
 
-            drug.quantity_in_stock -= change_amount
-            drug.save()
+    # Apply the inventory changes.
+    for drug_id, change_amount in changes.items():
+        drug = drugs[drug_id]
+        drug.quantity_in_stock -= change_amount
+        drug.save(update_fields=["quantity_in_stock"])

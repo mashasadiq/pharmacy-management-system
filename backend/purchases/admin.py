@@ -36,3 +36,10 @@ class PurchaseAdmin(admin.ModelAdmin):
     ordering = (
         "-purchase_date",
     )
+
+    def get_queryset(self, request):
+        return super().get_queryset(request).select_related(
+            "drug",
+            "supplier",
+            "received_by",
+        )

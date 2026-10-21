@@ -1,4 +1,3 @@
-
 {% extends "base.html" %}
 
 {% block title %}Notifications{% endblock %}
@@ -16,20 +15,6 @@
                 <p>
                     Type: {{ notification.get_type_display }}
                 </p>
-
-                {% if notification.is_read %}
-                    <p>Status: Read</p>
-                {% else %}
-                    <p>Status: Unread</p>
-
-                    <form
-                        method="post"
-                        action="{% url 'mark_notification_read' notification.id %}"
-                    >
-                        {% csrf_token %}
-                        <button type="submit">Mark as read</button>
-                    </form>
-                {% endif %}
 
                 <small>{{ notification.created_at }}</small>
             </div>

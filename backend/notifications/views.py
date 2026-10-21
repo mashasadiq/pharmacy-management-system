@@ -17,19 +17,3 @@ def notification_list(request):
         "notifications/notification_list.html",
         {"notifications": notifications},
     )
-
-
-@login_required
-@require_POST
-def mark_notification_read(request, notification_id):
-    """Mark one notification as read for the logged-in user."""
-    notification = get_object_or_404(
-        Notification,
-        id=notification_id,
-        user=request.user,
-    )
-
-    notification.is_read = True
-    notification.save(update_fields=["is_read"])
-
-    return redirect("notification_list")

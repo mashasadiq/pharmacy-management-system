@@ -218,117 +218,103 @@
     }
 
 
-    async function searchProducts(input, resultsContainer) {
-        /*
-         * Search the database for matching products
-         * and display the results for the current cart item.
-         */
-        const query =
-            input.value.trim();
-
-        resultsContainer.innerHTML = "";
+    async function searchProducts(input, resultsContainer, isCurrentSearch) {
+        const query = input.value.trim();
 
         if (!query) {
+            resultsContainer.innerHTML = "";
             return;
         }
 
-        const response =
-            await fetch(
+        try {
+            const response = await fetch(
                 "/sales/api/products/search/?q=" +
                 encodeURIComponent(query)
             );
 
-        const data =
-            await response.json();
+            // Detect HTTP errors before processing the response.
+            if (!response.ok) {
+                throw new Error("Product search failed.");
+            }
 
-        if (data.products.length === 1 &&
-            data.products[0].barcode === query) {
+            const data = await response.json();
 
-            const product = data.products[0];
+            // Ignore results from outdated searches.
+            if (!isCurrentSearch()) {
+                return;
+            }
 
-            const saleItem =
-                input.closest(".sale-item");
-
-            saleItem.querySelector(
-                ".drug"
-            ).value = product.id;
-
-            saleItem.querySelector(
-                ".selected-drug"
-            ).textContent =
-                product.name;
-
-            saleItem.querySelector(
-                ".drug-price"
-            ).textContent =
-                "Ksh " + product.price;
-
-            saleItem.querySelector(
-                ".drug-stock"
-            ).textContent =
-                "Stock: " + product.stock;
-
-            input.value = "";
+            if (!Array.isArray(data.products)) {
+                throw new Error("Invalid server response.");
+            }
 
             resultsContainer.innerHTML = "";
 
-            updateTotal();
+            if (data.products.length === 0) {
+                resultsContainer.textContent =
+                    "No matching in-stock drugs found.";
+                return;
+            }
 
-            return;
+            if (
+                data.products.length === 1 &&
+                data.products[0].barcode === query
+            ) {
+                selectProduct(input, resultsContainer, data.products[0]);
+                return;
+            }
+
+            data.products.forEach(function(product) {
+                const result = document.createElement("div");
+
+                result.textContent =
+                    product.name +
+                    " - Ksh " +
+                    product.price +
+                    " (Stock: " +
+                    product.stock +
+                    ")";
+
+                result.className = "search-result";
+
+                result.addEventListener("click", function() {
+                    selectProduct(input, resultsContainer, product);
+                });
+
+                resultsContainer.appendChild(result);
+            });
+
+        } catch (error) {
+            if (!isCurrentSearch()) {
+                return;
+            }
+
+            console.error("Product search error:", error);
+
+            resultsContainer.textContent =
+                "Unable to search products. Please try again.";
         }
+    }
 
-        data.products.forEach(function(product) {
+    //product selection helper, it removes duplicated product-selection code from the search function.
+    function selectProduct(input, resultsContainer, product) {
+        const saleItem = input.closest(".sale-item");
 
-            const result =
-                document.createElement("div");
+        saleItem.querySelector(".drug").value = product.id;
 
-            result.textContent =
-                product.name +
-                " - Ksh " +
-                product.price +
-                " (Stock: " +
-                product.stock +
-                ")";
+        saleItem.querySelector(".selected-drug").textContent =
+            product.name;
 
-            result.className =
-                "search-result";
+        saleItem.querySelector(".drug-price").textContent =
+            "Ksh " + product.price;
 
-            result.addEventListener(
-                "click",
-                function() {
+        saleItem.querySelector(".drug-stock").textContent =
+            "Stock: " + product.stock;
 
-                    const saleItem =
-                        input.closest(".sale-item");
+        input.value = "";
+        resultsContainer.innerHTML = "";
 
-                    saleItem.querySelector(
-                        ".drug"
-                    ).value = product.id;
-
-                    saleItem.querySelector(
-                        ".selected-drug"
-                    ).textContent =
-                        product.name;
-
-                    saleItem.querySelector(
-                        ".drug-price"
-                    ).textContent =
-                        "Ksh " + product.price;
-
-                    saleItem.querySelector(
-                        ".drug-stock"
-                    ).textContent =
-                        "Stock: " + product.stock;
-
-                    input.value = "";
-
-                    resultsContainer.innerHTML = "";
-
-                    updateTotal();
-                }
-            );
-
-            resultsContainer.appendChild(result);
-        });
+        updateTotal();
     }
 
 
@@ -350,16 +336,37 @@
             item.querySelector(".remove-item");
 
 
-        searchInput.addEventListener(
-            "input",
-            function() {
+        let debounceTimer = null;
+        let searchRequestId = 0;
+
+        searchInput.addEventListener("input", function() {
+
+            clearTimeout(debounceTimer);
+
+            // Invalidate any previous search request.
+            searchRequestId++;
+
+            const currentRequestId = searchRequestId;
+
+            if (!searchInput.value.trim()) {
+                searchResults.innerHTML = "";
+                return;
+            }
+
+            searchResults.textContent = "Searching...";
+
+            debounceTimer = setTimeout(function() {
 
                 searchProducts(
                     searchInput,
-                    searchResults
+                    searchResults,
+                    function() {
+                        return currentRequestId === searchRequestId;
+                    }
                 );
-            }
-        );
+
+            }, 300);
+        });
 
 
         quantityInput.addEventListener(
@@ -449,40 +456,47 @@
     );
 
 
+        
+    let isSubmitting = false;
+
     document.getElementById("sale-form").addEventListener(
         "submit",
         async function(event) {
 
             event.preventDefault();
 
+            // Prevent duplicate submissions.
+            if (isSubmitting) {
+                return;
+            }
+
+            const message = document.getElementById("message");
+            const form = event.currentTarget;
+
+            const submitButton = form.querySelector(
+                'button[type="submit"], input[type="submit"]'
+            );
 
             const patient =
                 document.getElementById("patient").value;
 
-
             const paymentMethod =
                 document.getElementById("payment_method").value;
-
 
             const saleItems =
                 document.querySelectorAll(".sale-item");
 
-
             const items = [];
-
 
             saleItems.forEach(function(item) {
 
                 const drug =
                     item.querySelector(".drug").value;
 
-
                 const quantity =
                     item.querySelector(".quantity").value;
 
-
                 if (drug && quantity) {
-
                     items.push({
                         drug_id: drug,
                         quantity: quantity
@@ -490,24 +504,41 @@
                 }
             });
 
-
             if (items.length === 0) {
-
-                document.getElementById("message").textContent =
+                message.textContent =
                     "Please add at least one sale item.";
-
                 return;
             }
 
+            const csrfInput = form.querySelector(
+                "[name=csrfmiddlewaretoken]"
+            );
 
-            const csrfToken =
-                document.querySelector(
-                    "[name=csrfmiddlewaretoken]"
-                ).value;
+            if (!csrfInput) {
+                message.textContent =
+                    "Security token missing. Please refresh the page.";
+                return;
+            }
 
+            const csrfToken = csrfInput.value;
 
-            const response =
-                await fetch(
+            isSubmitting = true;
+
+            if (submitButton) {
+                submitButton.disabled = true;
+
+                if (submitButton.tagName === "BUTTON") {
+                    submitButton.textContent = "Processing...";
+                } else {
+                    submitButton.value = "Processing...";
+                }
+            }
+
+            message.textContent = "Creating sale...";
+
+            try {
+
+                const response = await fetch(
                     "/sales/api/create/",
                     {
                         method: "POST",
@@ -525,27 +556,59 @@
                     }
                 );
 
+                // Verify that the server returned JSON.
+                const contentType =
+                    response.headers.get("content-type") || "";
 
-            const data =
-                await response.json();
+                if (!contentType.includes("application/json")) {
+                    throw new Error(
+                        "The server returned an unexpected response. Please try again."
+                    );
+                }
 
+                const data = await response.json();
 
-            const message =
-                document.getElementById("message");
+                if (!response.ok) {
+                    throw new Error(
+                        data.error || "Unable to create sale."
+                    );
+                }
 
+                if (!data.sale_id) {
+                    throw new Error(
+                        "Sale response is missing the sale ID."
+                    );
+                }
 
-            if (response.ok) {
+                message.textContent = "Sale created successfully.";
 
                 window.location.href =
                     "/sales/" + data.sale_id + "/";
 
-            } else {
+            } catch (error) {
+
+                console.error("Sale creation error:", error);
 
                 message.textContent =
-                    "Error: " + data.error;
+                    error.message ||
+                    "A network error occurred. Please try again.";
+
+                // Allow another attempt after failure.
+                isSubmitting = false;
+
+                if (submitButton) {
+                    submitButton.disabled = false;
+
+                    if (submitButton.tagName === "BUTTON") {
+                        submitButton.textContent = "Create Sale";
+                    } else {
+                        submitButton.value = "Create Sale";
+                    }
+                }
             }
         }
     );
+
 </script>
 
 {% endblock %}

@@ -4,6 +4,7 @@ from django.contrib.auth.decorators import login_required
 from .services import ReportService
 
 from accounts.decorators import admin_required
+from django.utils import timezone
 
 @login_required
 def reports_home(request):
@@ -104,12 +105,26 @@ def monthly_sales_report(request):
 
     sales = None
     total_revenue = 0
+    error = None
 
-    if year and month:
-        sales, total_revenue = ReportService.monthly_sales_report(
-            year,
-            month,
-        )
+    if year or month:
+        try:
+            year = int(year)
+            month = int(month)
+
+            if year < 2000 or year > timezone.localdate().year:
+                raise ValueError
+
+            if month < 1 or month > 12:
+                raise ValueError
+
+            sales, total_revenue = ReportService.monthly_sales_report(
+                year,
+                month,
+            )
+
+        except (ValueError, TypeError):
+            error = "Please select a valid month and year."
 
     return render(
         request,
@@ -119,5 +134,6 @@ def monthly_sales_report(request):
             "year": year,
             "month": month,
             "total_revenue": total_revenue,
+            "error": error,
         },
     )

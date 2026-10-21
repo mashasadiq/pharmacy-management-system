@@ -1,3 +1,4 @@
+
 {% extends "base.html" %}
 
 {% block title %}Pharmacy Inventory{% endblock %}
@@ -10,12 +11,14 @@
     <a href="{% url 'create_drug' %}">Add New Drug</a>
 {% endif %}
 
-<form method="get">
+<form method="get" id="inventory-search-form">
     <input
         type="text"
         name="q"
-        placeholder="Search drugs..."
+        id="inventory-search"
+        placeholder="Search by drug name, generic name, brand or barcode..."
         value="{{ query }}"
+        autocomplete="off"
     >
 
     <button type="submit">Search</button>
@@ -23,12 +26,127 @@
 
 <hr>
 
-{% for drug in drugs %}
-    <p>
-        {{ drug.name }} — Stock: {{ drug.quantity_in_stock }}
-    </p>
-{% empty %}
-    <p>No drugs found.</p>
-{% endfor %}
+<div id="inventory-results">
+    {% for drug in drugs %}
+        <div class="inventory-item">
+            <p>
+                <strong>{{ drug.name }}</strong>
+                — {{ drug.generic_name }}
+            </p>
+
+            <p>
+                Brand: {{ drug.brand }}
+                | Barcode: {{ drug.barcode }}
+            </p>
+
+            <p>
+                Selling Price: Ksh {{ drug.selling_price }}
+                | Stock: {{ drug.quantity_in_stock }}
+            </p>
+
+            <a href="{% url 'drug_detail' drug.id %}">View Details</a>
+        </div>
+        <hr>
+    {% empty %}
+        <p>No drugs found.</p>
+    {% endfor %}
+</div>
+
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+    const searchInput = document.getElementById("inventory-search");
+    const resultsContainer = document.getElementById("inventory-results");
+
+    let debounceTimer;
+    let requestId = 0;
+
+    const searchUrl = "{% url 'search_drugs' %}";
+
+    function displayDrugs(drugs) {
+        resultsContainer.replaceChildren();
+
+        if (drugs.length === 0) {
+            resultsContainer.textContent = "No drugs found.";
+            return;
+        }
+
+        drugs.forEach(function (drug) {
+            const item = document.createElement("div");
+            item.className = "inventory-item";
+
+            const name = document.createElement("p");
+            const strong = document.createElement("strong");
+            strong.textContent = drug.name;
+
+            name.appendChild(strong);
+            name.append(" — " + drug.generic_name);
+
+            const details = document.createElement("p");
+            details.textContent =
+                "Brand: " + drug.brand +
+                " | Barcode: " + drug.barcode;
+
+            const stock = document.createElement("p");
+            stock.textContent =
+                "Selling Price: Ksh " + drug.selling_price +
+                " | Stock: " + drug.stock;
+
+            const link = document.createElement("a");
+            link.href = "/inventory/drug/" + drug.id + "/";
+            link.textContent = "View Details";
+
+            item.append(name, details, stock, link);
+
+            const divider = document.createElement("hr");
+
+            resultsContainer.append(item, divider);
+        });
+    }
+
+    searchInput.addEventListener("input", function () {
+        clearTimeout(debounceTimer);
+
+        const query = searchInput.value.trim();
+        const currentRequest = ++requestId;
+
+        if (!query) {
+            window.location.href = "{% url 'inventory_list' %}";
+            return;
+        }
+
+        debounceTimer = setTimeout(async function () {
+            resultsContainer.textContent = "Searching...";
+
+            try {
+                const response = await fetch(
+                    searchUrl + "?q=" + encodeURIComponent(query)
+                );
+
+                if (!response.ok) {
+                    throw new Error("Search request failed.");
+                }
+
+                const data = await response.json();
+
+                if (!Array.isArray(data.drugs)) {
+                    throw new Error("Invalid search response.");
+                }
+
+                if (currentRequest !== requestId) {
+                    return;
+                }
+
+                displayDrugs(data.drugs);
+
+            } catch (error) {
+                if (currentRequest === requestId) {
+                    resultsContainer.textContent =
+                        "Unable to search inventory. Please try again.";
+                }
+            }
+        }, 300);
+    });
+});
+</script>
 
 {% endblock %}

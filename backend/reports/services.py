@@ -1,11 +1,13 @@
-from datetime import date
+from django.utils import timezone
 
-from django.db.models import F
+from django.db.models import F, Sum
 
 from inventory.models import Drug
 from patients.models import Patient
 from purchases.models import Purchase
 from sales.models import Sale
+
+from decimal import Decimal
 
 
 class ReportService:
@@ -15,14 +17,18 @@ class ReportService:
     @staticmethod
     def daily_sales_report(report_date):
         """Return completed sales and total revenue for a specific date."""
-        sales = Sale.objects.filter(
+        sales = Sale.objects.select_related(
+            "patient",
+            "pharmacist",
+        ).filter(
             sale_date__date=report_date,
             status=Sale.Status.COMPLETED,
         )
 
-        total_revenue = sum(
-            sale.total_amount for sale in sales
-        )
+        
+        total_revenue = sales.aggregate(
+            total=Sum("total_amount")
+        )["total"] or 0
 
         return sales, total_revenue
 
@@ -30,15 +36,18 @@ class ReportService:
     @staticmethod
     def monthly_sales_report(year, month):
         """Return completed sales and total revenue for a specific month."""
-        sales = Sale.objects.filter(
+        sales = Sale.objects.select_related(
+            "patient",
+            "pharmacist",
+        ).filter(
             sale_date__year=year,
             sale_date__month=month,
             status=Sale.Status.COMPLETED,
         )
 
-        total_revenue = sum(
-            sale.total_amount for sale in sales
-        )
+        total_revenue = sales.aggregate(
+            total=Sum("total_amount")
+        )["total"] or 0
 
         return sales, total_revenue
 
@@ -57,9 +66,8 @@ class ReportService:
 
     @staticmethod
     def expired_drugs_report():
-        """Return drugs whose expiry date has already passed."""
-        return Drug.objects.filter(
-            expiry_date__lt=date.today()
+        return Drug.objects.select_related("supplier").filter(
+            expiry_date__lt=timezone.localdate()
         )
 
     @staticmethod
@@ -71,22 +79,21 @@ class ReportService:
     @staticmethod
     def purchase_report():
         """Return purchases with total units and total purchase cost."""
+
         purchases = Purchase.objects.select_related(
             "drug",
             "supplier",
             "received_by",
+        ).annotate(
+            total_cost=F("quantity") * F("cost_price")
         )
 
-        total_units = sum(
-            purchase.quantity for purchase in purchases
+        totals = purchases.aggregate(
+            total_units=Sum("quantity"),
+            total_cost=Sum(F("quantity") * F("cost_price")),
         )
 
-        total_cost = sum(
-            purchase.quantity * purchase.cost_price
-            for purchase in purchases
-        )
-
-        for purchase in purchases:
-            purchase.total_cost = purchase.quantity * purchase.cost_price
+        total_units = totals["total_units"] or 0
+        total_cost = totals["total_cost"] or Decimal("0.00")
 
         return purchases, total_units, total_cost

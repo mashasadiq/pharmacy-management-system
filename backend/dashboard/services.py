@@ -1,6 +1,5 @@
 from django.db.models import Sum, F
 from django.utils import timezone
-from datetime import date
 
 from sales.models import Sale
 from inventory.models import Drug
@@ -11,7 +10,7 @@ class DashboardService:
 
     @staticmethod
     def get_statistics():
-        today = date.today()
+        today = timezone.localdate()
 
         return {
             "today_sales": Sale.objects.filter(
@@ -29,7 +28,7 @@ class DashboardService:
             "drugs": Drug.objects.count(),
 
             "low_stock": Drug.objects.filter(
-                quantity_in_stock__lte=F("reorder_level")
+                quantity_in_stock__lte=F("minimum_stock")
             ).count(),
 
             "expired_drugs": Drug.objects.filter(
