@@ -127,11 +127,16 @@ WSGI_APPLICATION = 'config.wsgi.application'
 
 
 # Database configuration
-DATABASE_URL = os.getenv("DATABASE_URL")
+ENVIRONMENT = os.getenv("ENVIRONMENT", "development")
 
-if DATABASE_URL:
+if ENVIRONMENT == "production":
     # Production: connect to Neon PostgreSQL
     import dj_database_url
+
+    DATABASE_URL = os.getenv("DATABASE_URL")
+
+    if not DATABASE_URL:
+        raise ValueError("DATABASE_URL is required in production.")
 
     DATABASES = {
         "default": dj_database_url.parse(
