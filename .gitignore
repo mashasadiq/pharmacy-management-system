@@ -26,6 +26,7 @@ backend/.venv/
 # ----------------------------------------------------------
 .env
 .env.*
+!.env.example
 backend/.env
 frontend/.env
 
