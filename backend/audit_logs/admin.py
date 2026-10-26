@@ -33,6 +33,9 @@ class AuditLogAdmin(admin.ModelAdmin):
         "timestamp",
     )
 
+    def get_queryset(self, request):
+        return super().get_queryset(request).select_related("user")
+
     def has_add_permission(self, request):
         """
         Prevent users from manually creating audit log records.
