@@ -1,4 +1,5 @@
 from django.contrib import admin
+from rest_framework import request
 
 # Register your models here.
 
@@ -39,6 +40,9 @@ class DrugAdmin(admin.ModelAdmin):
         "updated_at",
     )
 
+    def get_queryset(self, request):
+        return super().get_queryset(request).select_related("supplier")
+
 @admin.register(StockAdjustment)
 class StockAdjustmentAdmin(admin.ModelAdmin):
     list_display = (
@@ -64,3 +68,9 @@ class StockAdjustmentAdmin(admin.ModelAdmin):
     )
 
     ordering = ("-created_at",)
+
+    def get_queryset(self, request):
+        return super().get_queryset(request).select_related(
+            "drug",
+            "adjusted_by",
+        )
