@@ -88,10 +88,96 @@ class SaleTransactionTests(TestCase):
             password="test-password",
         )
 
+    def test_pharmacist_can_edit_pending_sale(self):
+        """Verify pending sale items and total are updated correctly."""
+
+        response = self.client.post(
+            reverse("edit_pending_sale", args=[self.sale.id]),
+            data={
+                "items": [
+                    {
+                        "drug_id": self.drug.id,
+                        "quantity": 3,
+                    }
+                ]
+            },
+            content_type="application/json",
+        )
+
+        self.assertEqual(response.status_code, 200)
+
+        self.sale.refresh_from_db()
+
+        self.assertEqual(
+            self.sale.total_amount,
+            Decimal("450.00"),
+        )
+
+        self.assertEqual(self.sale.items.count(), 1)
+
+        item = self.sale.items.get()
+
+        self.assertEqual(item.drug, self.drug)
+        self.assertEqual(item.quantity, 3)
+        self.assertEqual(item.unit_price, Decimal("150.00"))
+
+        # Editing a pending sale must not deduct inventory.
+        self.drug.refresh_from_db()
+        self.assertEqual(self.drug.quantity_in_stock, 40)
+
+        # Verify the edit was recorded.
+        self.assertTrue(
+            AuditLog.objects.filter(
+                user=self.user,
+                action="UPDATE",
+                table_name="sales_sale",
+                record_id=self.sale.id,
+            ).exists()
+        )
+
+
+    def test_edit_pending_sale_rolls_back_when_stock_is_insufficient(self):
+        """Verify failed edits preserve the original sale items and total."""
+
+        response = self.client.post(
+            reverse("edit_pending_sale", args=[self.sale.id]),
+            data={
+                "items": [
+                    {
+                        "drug_id": self.drug.id,
+                        "quantity": 50,
+                    }
+                ]
+            },
+            content_type="application/json",
+        )
+
+        self.assertEqual(response.status_code, 400)
+
+        # Original sale must remain unchanged.
+        self.sale.refresh_from_db()
+
+        self.assertEqual(
+            self.sale.total_amount,
+            Decimal("300.00"),
+        )
+
+        self.assertEqual(self.sale.items.count(), 1)
+
+        original_item = self.sale.items.get()
+
+        self.assertEqual(original_item.quantity, 2)
+        self.assertEqual(original_item.unit_price, Decimal("150.00"))
+
+        # Inventory must remain unchanged.
+        self.drug.refresh_from_db()
+        self.assertEqual(self.drug.quantity_in_stock, 40)
+
     @patch(
         "sales.views.AuditLog.objects.create",
         side_effect=RuntimeError("Simulated audit-log failure"),
     )
+
     def test_sale_completion_rolls_back_when_audit_fails(
         self,
         mock_audit_create,
@@ -295,7 +381,7 @@ class SaleTransactionTests(TestCase):
             original_audit_count,
         )
 
-    
+
     def test_anonymous_user_cannot_view_sale_detail(self):
         """Unauthenticated users must be redirected to login."""
         self.client.logout()

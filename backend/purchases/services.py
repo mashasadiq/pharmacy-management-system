@@ -1,4 +1,4 @@
-
+import uuid
 from django.db import transaction, IntegrityError
 from django.core.exceptions import ValidationError
 
@@ -28,13 +28,24 @@ def create_purchase(
     Create a purchase exactly once for a given idempotency key.
     """
 
+
     if not idempotency_key:
         raise ValidationError("An idempotency key is required.")
+
+    try:
+        idempotency_key = uuid.UUID(str(idempotency_key))
+    except (ValueError, TypeError, AttributeError):
+        raise ValidationError("A valid idempotency key is required.")
+
+    # Reject booleans and non-integer quantities.
+    if isinstance(quantity, bool) or not isinstance(quantity, int):
+        raise ValidationError("Quantity must be a whole number.")
 
     if quantity <= 0:
         raise ValidationError(
             "Purchase quantity must be greater than zero."
         )
+
 
 
 
@@ -125,6 +136,9 @@ def create_purchase(
     # Increase inventory only for a newly created purchase.
     drug.quantity_in_stock += quantity
     drug.save(update_fields=["quantity_in_stock"])
+
+    purchase.drug = drug  #assign the updated, locked Drug instance to the purchase object. That
+    #ensures purchase.drug.quantity_in_stock returns the updated stock without another database query.
 
     # Refresh or resolve the drug's low-stock alert after replenishment.
     check_low_stock(drug)

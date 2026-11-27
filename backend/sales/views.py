@@ -382,6 +382,12 @@ def edit_pending_sale(request, sale_id):
                 status=400,
             )
 
+
+
+        # Fetch all selected drugs in one database query.
+        drug_ids = {int(item["drug_id"]) for item in items}
+        drugs = Drug.objects.in_bulk(drug_ids)
+
         sale.items.all().delete()
 
         total_amount = Decimal("0.00")
@@ -394,9 +400,6 @@ def edit_pending_sale(request, sale_id):
                     "One or more selected drugs could not be found."
                 )
 
-            # Fetch all selected drugs in one database query.
-            drug_ids = {int(item["drug_id"]) for item in items}
-            drugs = Drug.objects.in_bulk(drug_ids)
 
             quantity = int(item["quantity"])
 
